@@ -1,0 +1,8 @@
+bzr branch lp:~cplusplus328/pylinkgrammar/pythonic
+cp cp link-grammar-4.6.7/FindLinkGrammar.cmake pythonic/
+mkdir build
+cd build
+cmake -D PYTHON_LIBRARYS=/usr/lib/python3.1/config/libpython3.1.so -D PYTHON_INCLUDE_PATH=/usr/include/python3.1 ../pythonic
+make
+
+you might need to edit the CMakeLists and comment out FIND_PACKAGE(PythonLibs)

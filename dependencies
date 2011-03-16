@@ -1,0 +1,10 @@
+cmake
+swig
+link-grammar4
+link-gramnar-dictionaries-en
+liblink-grammar4
+liblink-grammar4-dev
+festival
+pyfest
+python
+python-dev
