@@ -1,11 +1,59 @@
 #!/usr/bin/env python3
-from __future__ import print_function
-from linkgrammar import lp,Sentence,Linkage,clg,ParseOptions,Dictionary
-import linkgrammar
-import os
-import subprocess
-from understanding import *
+#from __future__ import print_function
+from linkgrammar import lp, Sentence, Linkage #,clg,ParseOptions,Dictionary
+from understanding import conversation, infinitive, adverb, stripSub
+#import linkgrammar
+#import os
+#import subprocess
 #import festival
+
+def findProblems(linkage,sent):
+    for i, word in enumerate(linkage.get_words()):
+        index=word.find('[~]')
+        if index>-1:
+            print("I am assuming '"+sent[i]+"' should be '"+word.replace('[~]','')+"'.")
+        index=word.find('[?]')
+        if index>-1:
+            print("I do not recognize '"+sent[i]+"'.")
+        index=word.find('[!]')
+        if index>-1:
+            print("I do not recognize '"+sent[i]+"'.")
+    
+
+def parseString(s,debug):
+    sent = Sentence(s)
+    if sent.parse():
+        linkage = Linkage(0,sent)
+        if debug:
+            linkage.print_diagram()
+        findProblems(linkage, sent)
+        return linkage
+    else:
+        return None
+
+def parseLinkage(linkage):
+    links={}
+    words={}
+    for link in linkage:
+        key="".join(char for char in link.label if char.isupper())
+        subscript="".join(char for char in link.label if not char.isupper())
+        if key in links.keys():
+            if subscript in links[key].keys():
+                links[key][subscript].append((link.lword,link.rword,link.domain_names))
+            else:
+                links[key][subscript]=[(link.lword,link.rword,link.domain_names)]
+        else:
+            links[key]={subscript:[(link.lword,link.rword,link.domain_names)]}
+        if link.lword in words.keys():
+            words[link.lword].append((key,subscript))
+        else:
+            words[link.lword]=[(key,subscript)]
+        if link.rword in words.keys():
+            words[link.rword].append((key,subscript))
+        else:
+            words[link.rword]=[(key,subscript)]
+    del link
+    return links,words
 
 parser = lp()
 
@@ -15,43 +63,10 @@ current=conversation()
 
 while True:
     s=input()
-    sent = Sentence(s)
-    words=s.split(' ')
-    if sent.parse():
+    linkage=parseString(s, True)
+    if linkage:
         try:
-            linkage = Linkage(0,sent)
-            linkage.print_diagram()
-            for i, word in enumerate(linkage.get_words()):
-                index=word.find('[~]')
-                if index>-1:
-                    print("I am assuming '"+sent[i]+"' should be '"+word.replace('[~]','')+"'.")
-                index=word.find('[?]')
-                if index>-1:
-                    print("I do not recognize '"+sent[i]+"'.")
-                index=word.find('[!]')
-                if index>-1:
-                    print("I do not recognize '"+sent[i]+"'.")
-            links={}
-            words={}
-            for link in linkage:
-                key="".join(char for char in link.label if char.isupper())
-                subscript="".join(char for char in link.label if not char.isupper())
-                if key in links.keys():
-                    if subscript in links[key].keys():
-                        links[key][subscript].append((link.lword,link.rword,link.domain_names))
-                    else:
-                        links[key][subscript]=[(link.lword,link.rword,link.domain_names)]
-                else:
-                    links[key]={subscript:[(link.lword,link.rword,link.domain_names)]}
-                if link.lword in words.keys():
-                    words[link.lword].append((key,subscript))
-                else:
-                    words[link.lword]=[(key,subscript)]
-                if link.rword in words.keys():
-                    words[link.rword].append((key,subscript))
-                else:
-                    words[link.rword]=[(key,subscript)]
-            del link
+            links,words=parseLinkage(linkage)
             
             #print links
             combinations=dict((key,key) for key in words)
