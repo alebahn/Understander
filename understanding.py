@@ -109,8 +109,7 @@ class interjection(object):
     def __str__(self):
         return self.name
 
-class entity(object):
-    __metaclass__=kind
+class entity(metaclass=kind):
     def __new__(cls,*args,**kargs):
         ent=object.__new__(cls)
         while(cls is not object):
@@ -173,14 +172,14 @@ class entity(object):
                     if getattr(self,type(DO).__name__)==DO:
                         delattr(self,type(DO).__name__)
                 else:
-                    print("Of coruse!")
+                    print("Of course!")
                 if DO!=None:
                     temp=DO.possessor
                     if DO.possessor==self:
                         DO.possessor=nothing("no one",self._context,person)
     def _have_get(self,DO=None):
         if any(isinstance(item,DO.kind) for item in self.possessions):
-            returnValue=plural("possessions",self._context,filter(lambda item:isinstance(item,DO.kind),self.possessions))   #change name, mess with declination.
+            returnValue=plural("possessions",self._context,[item for item in self.possessions if isinstance(item,DO.kind)])   #change name, mess with declination.
             returnValue.declinate(1)
             return returnValue
         return nothing("no one",self._context,entity)
@@ -280,6 +279,8 @@ class name(entity):
         else:
             return interjection(self == DO.name)
     be=verb(_be_set,asker=_be_ask,acter=_be_set)
+    def __hash__(self):
+        return hash(self.string)
 
 class adjective(entity):
     def __eq__(self,other):
@@ -476,7 +477,7 @@ class conversation:
         else:
             raise KeyError(index)
     def __contains__(self,index):
-        return index in _entities.keys() or index in _kinds.keys() or index in reversePronouns.keys()
+        return index in self._entities.keys() or index in self._kinds.keys() or index in reversePronouns.keys()
     def entity(self,name):
         name=str(name)
         if name in self._entities:

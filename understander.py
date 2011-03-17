@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 from __future__ import print_function
 from linkgrammar import lp,Sentence,Linkage,clg,ParseOptions,Dictionary
 import linkgrammar
@@ -14,7 +14,7 @@ current=conversation()
 #talker=festival.open()
 
 while True:
-    s=raw_input()
+    s=input()
     sent = Sentence(s)
     words=s.split(' ')
     if sent.parse():
@@ -34,8 +34,8 @@ while True:
             links={}
             words={}
             for link in linkage:
-                key=filter(lambda char: char.isupper(), link.label)
-                subscript=filter(lambda char: not char.isupper(), link.label)
+                key="".join(char for char in link.label if char.isupper())
+                subscript="".join(char for char in link.label if not char.isupper())
                 if key in links.keys():
                     if subscript in links[key].keys():
                         links[key][subscript].append((link.lword,link.rword,link.domain_names))
@@ -102,46 +102,46 @@ while True:
                             if combinations[key]==noun or combinations[key]==detr:
                                 combinations[key]=combination
             
-            if 'Q' in links or any(char in links['W'] for char in "qsj"):
+            if 'Q' in links or 'W' in links and any(char in links['W'] for char in "qsj"):
                 #print "interogative sentence"
                 if 'S' in links:
                     SV=links['S']
-                    subject=SV[SV.keys()[0]][0][0]
-                    verb=SV[SV.keys()[0]][0][1]
+                    subject=SV[list(SV.keys())[0]][0][0]
+                    verb=SV[list(SV.keys())[0]][0][1]
                 elif 'SI' in links:
                     SV=links['SI']
-                    subject=SV[SV.keys()[0]][0][1]
-                    verb=SV[SV.keys()[0]][0][0]
+                    subject=SV[list(SV.keys())[0]][0][1]
+                    verb=SV[list(SV.keys())[0]][0][0]
                 elif 'SXI' in links:
                     SV=links['SXI']
-                    subject=SV[SV.keys()[0]][0][1]
-                    verb=SV[SV.keys()[0]][0][0]
+                    subject=SV[list(SV.keys())[0]][0][1]
+                    verb=SV[list(SV.keys())[0]][0][0]
                 verbLinks=words[verb]
                 subject=combinations[subject]
                 verb=combinations[verb]
                 if any(tups[0]=='O' for tups in verbLinks):
-                    directObject=links['O'][filter(lambda tups:tups[0]=='O',verbLinks)[0][1]][0][1]
+                    directObject=links['O'][[tups for tups in verbLinks if tups[0]=='O'][0][1]][0][1]
                     directObject=combinations[directObject]
                     directObject=current[directObject]
                 elif any(tups[0]=='P' for tups in verbLinks):
-                    directObject=links['P'][filter(lambda tups:tups[0]=='P',verbLinks)[0][1]][0][1]
+                    directObject=links['P'][[tups for tups in verbLinks if tups[0]=='P'][0][1]][0][1]
                     directObject=combinations[directObject]
                     directObject=current[directObject]
                 elif any(tups[0]=='I' for tups in verbLinks):
-                    inf=links['I'][filter(lambda tups:tups[0]=='I',verbLinks)[0][1]][0][1]
+                    inf=links['I'][[tups for tups in verbLinks if tups[0]=='I'][0][1]][0][1]
                     infLinks=words[inf]
                     inf=combinations[inf]
                     if any(tups[0]=='O' for tups in infLinks):
-                        directObject=links['O'][filter(lambda tups:tups[0]=='O',infLinks)[0][1]][0][1]
+                        directObject=links['O'][[tups for tups in infLinks if tups[0]=='O'][0][1]][0][1]
                     elif any(tups[0]=='B' for tups in infLinks):
-                        directObject=links['B'][filter(lambda tups:tups[0]=='B',infLinks)[0][1]][0][0]
+                        directObject=links['B'][[tups for tups in infLinks if tups[0]=='B'][0][1]][0][0]
                     directObject=combinations[directObject]
                     directObject=infinitive(current,inf,current[directObject])
                 response=current.verb(subject,verb).ask(directObject)
                 print(response)
                 #talker.say(response)
                 
-            elif 'i' in links['W']:
+            elif 'W' in links and 'i' in links['W']:
                 #print "imperative sentece"
                 subject="you"
                 verbLink=links['W']
@@ -159,14 +159,14 @@ while True:
                 print(response)
                 #talker.say(response)
                 
-            elif 'd' in links['W']:
+            elif 'W' in links and 'd' in links['W']:
                 #print "declarative sentence"
                 if 'S' in links:
                     SV=links['S']
                 elif 'SX' in links:
                     SV=links['SX']
-                subject=SV[SV.keys()[0]][0][0]
-                verb=SV[SV.keys()[0]][0][1]
+                subject=SV[list(SV.keys())[0]][0][0]
+                verb=SV[list(SV.keys())[0]][0][1]
                 verbLinks=words[verb]
                 subject=combinations[subject]
                 verb=combinations[verb]
@@ -183,7 +183,7 @@ while True:
                     adv=adverb(stripSub(adv),current)
                 directObject=None
                 if any(tups[0]=='O' for tups in verbLinks):
-                    objectLinks=filter(lambda tups:tups[0]=='O',verbLinks)
+                    objectLinks=[tups for tups in verbLinks if tups[0]=='O']
                     directObject=links['O'][objectLinks[0][1]][0][1]
                     directObject=combinations[directObject]
                     directObject=current[directObject]

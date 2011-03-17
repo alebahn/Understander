@@ -136,7 +136,7 @@ class Dictionary(object):
 		self._dict = clg.dictionary_create_lang(lang)
 	
 	def __del__(self):
-		#print "Deleting",self.__class__
+		#print("Deleting",self.__class__)
 		if self._dict is not None:
 			clg.dictionary_delete(self._dict)
 			self._dict = None
@@ -151,9 +151,9 @@ class Sentence(object):
 		self._sent = clg.sentence_create(s,lp.dictionary._dict)
 	
 	def __del__(self):
-		#print "Deleting",self.__class__
+		#print("Deleting",self.__class__)
 		if self._sent is not None:
-			clg.sentence_delete(self._sent)
+			#clg.sentence_delete(self._sent)
 			#print "Calling sentence_delete will cause a segfault"
 			self._sent = None
 	
@@ -414,7 +414,8 @@ class Word(object):
 		
 
 def cleanup():
-	print("Cleaning up linkgrammar...")
+	pass
+	#print("Cleaning up linkgrammar...")
 
 atexit.register(cleanup)
 
