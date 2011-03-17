@@ -157,6 +157,65 @@ def parseInterogative(links,words,combinations):
         directObject=infinitive(current,inf,current[directObject])
     return current.verb(subject,verb).ask(directObject)
 
+def parseImperative(links,words,combinations):
+    subject="you"
+    verbLink=links['W']
+    verb=verbLink[list(verbLink.keys())[0]][0][1]
+    directObject=None
+    if any(tups[0]=='O' for tups in words[verb]):
+        objectLinks=[tups for tups in words[verb] if tups[0]=='O']
+        directObject=links['O'][objectLinks[0][1]][0][1]
+    elif any(tups[0]== 'P' for tups in words[verb]):
+        objectLinks=[tups for tups in words[verb] if tups[0]=='P']
+        directObject=links['P'][objectLinks[0][1]][0][1]
+    verb=combinations[verb]
+    directObject=combinations[directObject]
+    return current.verb(subject,verb).act(current[directObject])
+
+def parseDeclarative(links,words,combinations):
+    if 'S' in links:
+        SV=links['S']
+    elif 'SX' in links:
+        SV=links['SX']
+    subject=SV[list(SV.keys())[0]][0][0]
+    verb=SV[list(SV.keys())[0]][0][1]
+    verbLinks=words[verb]
+    subject=combinations[subject]
+    verb=combinations[verb]
+    adv=None
+    if any(tups[0]=='N' for tups in verbLinks):
+        advLinks=filter(lambda tups:tups[0]=='N',verbLinks)
+        adv=links['N'][advLinks[0][1]][0][1]
+        adv=combinations[adv]
+        adv=adverb(stripSub(adv),current)
+    if any(tups[0]=='EB' for tups in verbLinks):
+        advLinks=filter(lambda tups:tups[0]=='EB',verbLinks)
+        adv=links['EB'][advLinks[0][1]][0][1]
+        adv=combinations[adv]
+        adv=adverb(stripSub(adv),current)
+    directObject=None
+    if any(tups[0]=='O' for tups in verbLinks):
+        objectLinks=[tups for tups in verbLinks if tups[0]=='O']
+        directObject=links['O'][objectLinks[0][1]][0][1]
+        directObject=combinations[directObject]
+        directObject=current[directObject]
+    elif any(tups[0]== 'P' for tups in verbLinks):
+        objectLinks=filter(lambda tups:tups[0]=='P',verbLinks)
+        directObject=links['P'][objectLinks[0][1]][0][1]
+        directObject=combinations[directObject]
+        directObject=current[directObject]
+    elif any(tups[0]=='I' for tups in verbLinks):
+        inf=links['I'][filter(lambda tups:tups[0]=='I',verbLinks)[0][1]][0][1]
+        infLinks=words[inf]
+        inf=combinations[inf]
+        if any(tups[0]=='O' for tups in infLinks):
+            directObject=links['O'][filter(lambda tups:tups[0]=='O',infLinks)[0][1]][0][1]
+##      elif any(tups[0]=='B' for tups in infLinks):
+##          directObject=links['B'][filter(lambda tups:tups[0]=='B',infLinks)[0][1]][0][0]
+        directObject=combinations[directObject]
+        directObject=infinitive(current,inf,current[directObject])
+    current.verb(subject,verb)(directObject,adv=adv)
+
 parser = lp()
 
 current=conversation()
@@ -177,69 +236,12 @@ while True:
                 response=parseInterogative(links, words, combinations)
                 print(response)
                 #talker.say(response)
-                
             elif sentenceType=="imperative":
-                #print "imperative sentence"
-                subject="you"
-                verbLink=links['W']
-                verb=verbLink[list(verbLink.keys())[0]][0][1]
-                directObject=None
-                if any(tups[0]=='O' for tups in words[verb]):
-                    objectLinks=[tups for tups in words[verb] if tups[0]=='O']
-                    directObject=links['O'][objectLinks[0][1]][0][1]
-                elif any(tups[0]== 'P' for tups in words[verb]):
-                    objectLinks=[tups for tups in words[verb] if tups[0]=='P']
-                    directObject=links['P'][objectLinks[0][1]][0][1]
-                verb=combinations[verb]
-                directObject=combinations[directObject]
-                response=current.verb(subject,verb).act(current[directObject])
+                response=parseImperative(links, words, combinations)
                 print(response)
                 #talker.say(response)
-                
             elif sentenceType=="declarative":
-                #print "declarative sentence"
-                if 'S' in links:
-                    SV=links['S']
-                elif 'SX' in links:
-                    SV=links['SX']
-                subject=SV[list(SV.keys())[0]][0][0]
-                verb=SV[list(SV.keys())[0]][0][1]
-                verbLinks=words[verb]
-                subject=combinations[subject]
-                verb=combinations[verb]
-                adv=None
-                if any(tups[0]=='N' for tups in verbLinks):
-                    advLinks=filter(lambda tups:tups[0]=='N',verbLinks)
-                    adv=links['N'][advLinks[0][1]][0][1]
-                    adv=combinations[adv]
-                    adv=adverb(stripSub(adv),current)
-                if any(tups[0]=='EB' for tups in verbLinks):
-                    advLinks=filter(lambda tups:tups[0]=='EB',verbLinks)
-                    adv=links['EB'][advLinks[0][1]][0][1]
-                    adv=combinations[adv]
-                    adv=adverb(stripSub(adv),current)
-                directObject=None
-                if any(tups[0]=='O' for tups in verbLinks):
-                    objectLinks=[tups for tups in verbLinks if tups[0]=='O']
-                    directObject=links['O'][objectLinks[0][1]][0][1]
-                    directObject=combinations[directObject]
-                    directObject=current[directObject]
-                elif any(tups[0]== 'P' for tups in verbLinks):
-                    objectLinks=filter(lambda tups:tups[0]=='P',verbLinks)
-                    directObject=links['P'][objectLinks[0][1]][0][1]
-                    directObject=combinations[directObject]
-                    directObject=current[directObject]
-                elif any(tups[0]=='I' for tups in verbLinks):
-                    inf=links['I'][filter(lambda tups:tups[0]=='I',verbLinks)[0][1]][0][1]
-                    infLinks=words[inf]
-                    inf=combinations[inf]
-                    if any(tups[0]=='O' for tups in infLinks):
-                        directObject=links['O'][filter(lambda tups:tups[0]=='O',infLinks)[0][1]][0][1]
-##                    elif any(tups[0]=='B' for tups in infLinks):
-##                        directObject=links['B'][filter(lambda tups:tups[0]=='B',infLinks)[0][1]][0][0]
-                    directObject=combinations[directObject]
-                    directObject=infinitive(current,inf,current[directObject])
-                current.verb(subject,verb)(directObject,adv=adv)
+                parseDeclarative(links, words, combinations)
         except KeyError as value:   #conjugate 'be' for argument
             response="What is "+stripSub(value.args[0])+"?"
             print(response)
