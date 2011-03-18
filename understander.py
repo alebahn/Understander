@@ -7,8 +7,6 @@ from understanding import conversation, infinitive, adverb, stripSub
 #import subprocess
 #import festival
 
-debug=False
-
 def findProblems(linkage,sent):
     for i, word in enumerate(linkage.get_words()):
         index=word.find('[~]')
@@ -63,7 +61,7 @@ def printLinks(links):
             for link in subkeyGroup:
                 print((key,subkey)+link)
 
-def generateCombinations(links,words):
+def generateCombinations(links,words,current):
     combinations=dict((key,key) for key in words)
     #figure out a way to treat the versions that start with "ID"
     #remove spacer variable
@@ -121,7 +119,7 @@ def clasifySentence(links):
     elif 'W' in links and 'd' in links['W']:
         return "declarative"
     
-def parseInterogative(links,words,combinations):
+def parseInterogative(links,words,combinations,current):
     if 'S' in links:
         SV=links['S']
         subject=SV[list(SV.keys())[0]][0][0]
@@ -157,7 +155,7 @@ def parseInterogative(links,words,combinations):
         directObject=infinitive(current,inf,current[directObject])
     return current.verb(subject,verb).ask(directObject)
 
-def parseImperative(links,words,combinations):
+def parseImperative(links,words,combinations,current):
     subject="you"
     verbLink=links['W']
     verb=verbLink[list(verbLink.keys())[0]][0][1]
@@ -172,7 +170,7 @@ def parseImperative(links,words,combinations):
     directObject=combinations[directObject]
     return current.verb(subject,verb).act(current[directObject])
 
-def parseDeclarative(links,words,combinations):
+def parseDeclarative(links,words,combinations,current):
     if 'S' in links:
         SV=links['S']
     elif 'SX' in links:
@@ -216,48 +214,47 @@ def parseDeclarative(links,words,combinations):
         directObject=infinitive(current,inf,current[directObject])
     current.verb(subject,verb)(directObject,adv=adv)
 
-parser = lp()
-
-current=conversation()
-
-#talker=festival.open()
-
-while True:
-    s=input()
-    linkage=parseString(s, debug)
-    if linkage:
-        links,words=parseLinkage(linkage)
-        try:
-            if debug:
-                printLinks(links)
-            combinations=generateCombinations(links, words)
-            sentenceType=clasifySentence(links)
-            if sentenceType=="interrogative":
-                response=parseInterogative(links, words, combinations)
+if __name__ == "__main__":
+    debug=False #turn off debugging output
+    parser=lp()   #initialize the parser
+    current=conversation()  #initialize the context
+    #talker=festival.open()
+    
+    while True:
+        s=input()
+        linkage=parseString(s, debug)
+        if linkage:
+            links,words=parseLinkage(linkage)
+            try:
+                if debug:
+                    printLinks(links)
+                combinations=generateCombinations(links, words,current)
+                sentenceType=clasifySentence(links)
+                if sentenceType=="interrogative":
+                    response=parseInterogative(links, words, combinations,current)
+                    print(response)
+                    #talker.say(response)
+                elif sentenceType=="imperative":
+                    response=parseImperative(links, words, combinations,current)
+                    print(response)
+                    #talker.say(response)
+                elif sentenceType=="declarative":
+                    parseDeclarative(links, words, combinations,current)
+            except KeyError as value:   #conjugate 'be' for argument
+                response="What is "+stripSub(value.args[0])+"?"
                 print(response)
                 #talker.say(response)
-            elif sentenceType=="imperative":
-                response=parseImperative(links, words, combinations)
-                print(response)
-                #talker.say(response)
-            elif sentenceType=="declarative":
-                parseDeclarative(links, words, combinations)
-        except KeyError as value:   #conjugate 'be' for argument
-            response="What is "+stripSub(value.args[0])+"?"
-            print(response)
-            #talker.say(response)
-            raise
-        except AttributeError as value:
-            print(str(value.args[0]))
-            #talker.say(str(value.args[0]))
-            raise
-    #hereafter are grammatically incorrect commands
-    elif 'run' in words:
-        print(words)
-    elif 'exit' in words:
-        print(words)
-    else:
-        print("My responses are limited. Please use precise English")
-
-# For now explicitly delete sentence
-del linkage
+                raise
+            except AttributeError as value:
+                print(str(value.args[0]))
+                #talker.say(str(value.args[0]))
+                raise
+        #hereafter are grammatically incorrect commands
+        elif 'run' in words:
+            print(words)
+        elif 'exit' in words:
+            print(words)
+        else:
+            print("My responses are limited. Please use precise English")
+    # For now explicitly delete the linkage
+    del linkage

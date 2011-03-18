@@ -17,7 +17,7 @@ for contraction in ("'m","'re","'s"):
 
 #         Sub.       Sub.       Obj.       Det.        Poss.
 pronouns={"I"      :("I.p"     ,"me"      ,"my"       ,"mine.p"   ),#Personal
-	  "you"    :("you"     ,"you"     ,"your"     ,"yours"    ),
+	      "you"    :("you"     ,"you"     ,"your"     ,"yours"    ),
           "he"     :("he"      ,"him"     ,"his"      ,"his"      ),
           "she"    :("she"     ,"her"     ,"her"      ,"hers"     ),
           "it"     :("it"      ,"it"      ,"its"      ,None       ),
@@ -27,7 +27,7 @@ pronouns={"I"      :("I.p"     ,"me"      ,"my"       ,"mine.p"   ),#Personal
           "this"   :("this.p"  ,"this.p"  ,"this.d"   ,None       ),
           "those"  :("those"   ,"those"   ,"those"    ,None       ),
           "these"  :("these"   ,"these"   ,"these"    ,None       ),
-          "who"    :("who"     ,"whom"    ,"whose"    ,"whose"    ),#Interogative
+          "who"    :("who"     ,"whom"    ,"whose"    ,"whose"    ),#Interrogative
           "what"   :("what"    ,"what"    ,"which"    ,None       )}
 #add Indefinite pronouns (may not be correct. check later
 for pronoun in ("another", "each", "either", "enough", "everything", "less", "little", "much", "neither", "nothing", "other", "plenty", "something", "both", "few", "fewer", "many", "others", "several", "all", "any", "more", "none", "some", "such"):
@@ -463,7 +463,7 @@ class conversation:
         self._kinds={"kind":kind,"entity":entity,"name":name,"thing":thing,"person":person,
                      "computer":computer,"user":user,"infinitive":infinitive,"pronoun":pronoun,"male":male,"female":female}
         self._entities={computerName:computer(computerName,self,True),userName:user(userName,self,True),"Vibranium":thing("Vibranium",self)}
-        self._temp={}   #stores 'a/an' objects and posessives
+        self._temp={}   #stores 'a/an' objects and possessives
         self._antecedents={"I":self._entities[userName],"you":self._entities[computerName]}
     def getAntecedent(self,pronoun):
         return self._antecedents[pronoun]
