@@ -7,7 +7,7 @@ from understanding import conversation, infinitive, adverb, stripSub
 #import subprocess
 #import festival
 
-def findProblems(linkage,sent):
+def findProblems(linkage,sent):     #TODO: replace [~] words and return error code
     for i, word in enumerate(linkage.get_words()):
         index=word.find('[~]')
         if index>-1:
@@ -65,7 +65,7 @@ def generateCombinations(links,words,current):
     combinations=dict((key,key) for key in words)
     #figure out a way to treat the versions that start with "ID"
     #remove spacer variable
-    for name in ('AN','G','ND','TM','TW','TY'): #generateCombinations some two-word items together
+    for name in ('AN','G','ND','TM','TW','TY'): #combine some two-word items together
         if name in links:
             for group in links[name].values():
                 for link in group:
@@ -84,7 +84,7 @@ def generateCombinations(links,words,current):
                     for key in combinations:
                         if combinations[key]==combinations[link[1]]:
                             combinations[key]=combinations[link[0]]
-    if 'D' in links:    #generateCombinations determiners to noun
+    if 'D' in links:    #join determiners to noun
         for group in links['D'].values():
             for link in sorted(group):
                 dlink=link[0]
@@ -108,6 +108,17 @@ def generateCombinations(links,words,current):
                 combination=current.adjective(adj,noun)
                 for key in combinations:
                     if combinations[key]==noun or combinations[key]==detr:
+                        combinations[key]=combination
+    if 'J' in links: #combine prepositional phrases
+        for group in links['J'].values():
+            for link in group:
+                pkey=link[0]
+                prep=combinations[pkey]
+                okey=link[1]
+                obj=combinations[okey]
+                combination=current.prepPhrase(prep,obj)
+                for key in combinations:
+                    if combinations[key]==prep or combinations[key]==obj:
                         combinations[key]=combination
     return combinations
 
@@ -141,6 +152,10 @@ def parseInterogative(links,words,combinations,current):
         directObject=current[directObject]
     elif any(tups[0]=='P' for tups in verbLinks):
         directObject=links['P'][[tups for tups in verbLinks if tups[0]=='P'][0][1]][0][1]
+        directObject=combinations[directObject]
+        directObject=current[directObject]
+    elif any(tups[0]=='PF' for tups in verbLinks):
+        directObject=links['PF'][[tups for tups in verbLinks if tups[0]=='PF'][0][1]][0][0]
         directObject=combinations[directObject]
         directObject=current[directObject]
     elif any(tups[0]=='I' for tups in verbLinks):
@@ -182,12 +197,12 @@ def parseDeclarative(links,words,combinations,current):
     verb=combinations[verb]
     adv=None
     if any(tups[0]=='N' for tups in verbLinks):
-        advLinks=filter(lambda tups:tups[0]=='N',verbLinks)
+        advLinks=[tups for tups in verbLinks if tups[0]=='N']
         adv=links['N'][advLinks[0][1]][0][1]
         adv=combinations[adv]
         adv=adverb(stripSub(adv),current)
     if any(tups[0]=='EB' for tups in verbLinks):
-        advLinks=filter(lambda tups:tups[0]=='EB',verbLinks)
+        advLinks=[tups for tups in verbLinks if tups[0]=='EB']
         adv=links['EB'][advLinks[0][1]][0][1]
         adv=combinations[adv]
         adv=adverb(stripSub(adv),current)
@@ -198,24 +213,24 @@ def parseDeclarative(links,words,combinations,current):
         directObject=combinations[directObject]
         directObject=current[directObject]
     elif any(tups[0]== 'P' for tups in verbLinks):
-        objectLinks=filter(lambda tups:tups[0]=='P',verbLinks)
+        objectLinks=[tups for tups in verbLinks if tups[0]=='P']
         directObject=links['P'][objectLinks[0][1]][0][1]
         directObject=combinations[directObject]
         directObject=current[directObject]
     elif any(tups[0]=='I' for tups in verbLinks):
-        inf=links['I'][filter(lambda tups:tups[0]=='I',verbLinks)[0][1]][0][1]
+        inf=links['I'][[tups for tups in verbLinks if tups[0]=='I'][0][1]][0][1]
         infLinks=words[inf]
         inf=combinations[inf]
         if any(tups[0]=='O' for tups in infLinks):
-            directObject=links['O'][filter(lambda tups:tups[0]=='O',infLinks)[0][1]][0][1]
+            directObject=links['O'][[tups for tups in infLinks if tups[0]=='O'][0][1]][0][1]
 ##      elif any(tups[0]=='B' for tups in infLinks):
-##          directObject=links['B'][filter(lambda tups:tups[0]=='B',infLinks)[0][1]][0][0]
+##          directObject=links['B'][[tups for tups in infLinks if tups[0]=='B'][0][1]][0][0]
         directObject=combinations[directObject]
         directObject=infinitive(current,inf,current[directObject])
     current.verb(subject,verb)(directObject,adv=adv)
 
 if __name__ == "__main__":
-    debug=False #turn off debugging output
+    debug=True #turn off debugging output
     parser=lp()   #initialize the parser
     current=conversation()  #initialize the context
     #talker=festival.open()

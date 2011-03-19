@@ -1,9 +1,8 @@
 from __future__ import print_function
 from linkgrammar import Word
-import os
 import platform
 import getpass
-import subprocess
+#import subprocess
 
 #                          Present                                        Past
 #     Inf.      Inf/Imp.   I          Sing.       Plural     Part.        I             Sing.         Plural        Part.
@@ -28,7 +27,8 @@ pronouns={"I"      :("I.p"     ,"me"      ,"my"       ,"mine.p"   ),#Personal
           "those"  :("those"   ,"those"   ,"those"    ,None       ),
           "these"  :("these"   ,"these"   ,"these"    ,None       ),
           "who"    :("who"     ,"whom"    ,"whose"    ,"whose"    ),#Interrogative
-          "what"   :("what"    ,"what"    ,"which"    ,None       )}
+          "what"   :("what"    ,"what"    ,"which"    ,None       ),
+          "where"  :("where"   ,"where"   ,None       ,None       )}
 #add Indefinite pronouns (may not be correct. check later
 for pronoun in ("another", "each", "either", "enough", "everything", "less", "little", "much", "neither", "nothing", "other", "plenty", "something", "both", "few", "fewer", "many", "others", "several", "all", "any", "more", "none", "some", "such"):
     pronouns[pronoun]=(pronoun,)*3+(None,)
@@ -44,10 +44,10 @@ def createPronoun(name,context):
         return personal(baseName,context,index)
     elif baseName in ("that","this","those","these"):
         pass
-    elif baseName in ("who","what"):
+    elif baseName in ("who","what","where"):
         return question(baseName,context,index)
     else:
-        pass   #create error?
+        raise Exception("Pronoun not defined.")
 
 def stripSub(name):
     return str(name).partition('.')[0]
@@ -68,7 +68,7 @@ class kind(type):
     def all(cls,context):
         return plural("all "+cls.__name__,context,cls._entities,kind=cls)
 
-class verb(object):
+class verb(object): #remove getter?
     def __init__(self,setter=None,getter=None,helper=None,asker=None,acter=None):
         self._getter=getter
         self._setter=setter
@@ -89,10 +89,10 @@ class verb(object):
             else:
                 return self._setter(self._instance,*args,**kargs)
         def ask(self,*args,**kargs):
-            if any(isinstance(arg,question) for arg in args) or any(isinstance(arg,question) for arg in kargs.values()):
-                return self._getter(self._instance,*args,**kargs)
-            else:
-                return self._asker(self._instance,*args,**kargs)
+#            if any(isinstance(arg,question) for arg in args) or any(isinstance(arg,question) for arg in kargs.values()):
+#                return self._getter(self._instance,*args,**kargs)
+#            else:
+            return self._asker(self._instance,*args,**kargs)
         def act(self,*args,**kargs):
             return self._acter(self._instance,*args,**kargs)
     def __get__(self,instance,owner):
@@ -108,6 +108,15 @@ class interjection(object):
         self.name=name
     def __str__(self):
         return self.name
+
+class prepositionalPhrase(object):
+    def __init__(self,prep,obj):
+        self.preposition=prep
+        self.noun=obj
+    def modify(self,subj):
+        if(self.preposition=="at"): #assume location for now
+            subj.possessions.add(self.noun)
+            subj.location=self.noun
 
 class entity(metaclass=kind):
     def __new__(cls,*args,**kargs):
@@ -200,6 +209,8 @@ class entity(metaclass=kind):
         if adv==None:
             if isinstance(DO,adjective):
                 self.properties.add(DO)
+            elif isinstance(DO,prepositionalPhrase):
+                DO.modify(self)
             elif DO.name.partition(' ')[0] in ('a','an'):   #modify owner's list?
                 if self.name.partition(' ')[0] in ('a','an'):
                     type(self).__bases__=(type(DO),)
@@ -221,7 +232,7 @@ class entity(metaclass=kind):
                 for item in DO.possessions:
                     self.possessions.add(item)      #what if both have the same generic object?
                 for item in DO.properties:
-                    self.properties.append(item)    #more complexety needed when oposited added
+                    self.properties.append(item)    #more complexity needed when oposited added
                 if str(DO.name) in self._context._entities:
                     self._context._entities[str(DO.name)]=self
                 if DO.possessor:
@@ -237,6 +248,11 @@ class entity(metaclass=kind):
     def _be_ask(self,DO=None):
         if isinstance(DO,adjective):
             return interjection(DO in self.properties)
+        elif isinstance(DO,question):
+            if DO.kind==place:
+                return self.location
+            else:
+                return self #may need to be changed
         elif DO.name.partition(' ')[0] in ('a','an'):
             return interjection(isinstance(self,type(DO)))
         else:
@@ -306,6 +322,12 @@ class person(entity):
     pass
 
 class thing(entity):
+    pass
+
+class place(thing):
+    pass
+
+class location(place):
     pass
 
 class plural(entity):
@@ -426,8 +448,10 @@ class question(pronoun):
             match=person
         elif name=="what":
             match=thing
+        elif name=="where":
+            match=place
         else:
-            raise pronounError("Invalid interogative pronoun")
+            raise pronounError("Invalid interrogative pronoun")
         pronoun.__init__(self,name,context,decl,match,True)
         self.antecedent=None
     def __str__(self):
@@ -559,4 +583,14 @@ class conversation:
                 del self[noun]
                 item.be(self[adj+'.a'])
                 self._entities[name]=item
+        return name
+    def prepPhrase(self,prep,obj):
+        prep=stripSub(prep)
+        obj=stripSub(obj)
+        name=prep+' '+obj
+        prepPhrase=prepositionalPhrase(prep,obj)
+        if name not in self._temp:
+            self._temp[name]=prepPhrase
+        else:
+            raise Exception('second "' + name + '" not handled')
         return name

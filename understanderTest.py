@@ -189,6 +189,115 @@ class Test(unittest.TestCase):
         result=understander.parseInterogative(links, words, combinations, self.current)
         self.assertEqual(str(result), "Daisy")
         
+    def testAdjective1(self):
+        s="am I happy"
+        linkage=understander.parseString(s, self.debug)
+        self.assertIsNotNone(linkage)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        classification=understander.clasifySentence(links)
+        self.assertEqual(classification, "interrogative")
+        result=understander.parseInterogative(links, words, combinations, self.current)
+        self.assertEqual(str(result), "no")
+        
+        s="I am happy"
+        linkage=understander.parseString(s, self.debug)
+        self.assertIsNotNone(linkage)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        classification=understander.clasifySentence(links)
+        self.assertEqual(classification, "declarative")
+        understander.parseDeclarative(links, words, combinations, self.current)
+        
+        s="am I happy"
+        linkage=understander.parseString(s, self.debug)
+        self.assertIsNotNone(linkage)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        classification=understander.clasifySentence(links)
+        self.assertEqual(classification, "interrogative")
+        result=understander.parseInterogative(links, words, combinations, self.current)
+        self.assertEqual(str(result), "yes")
+        
+    def testAdjective2(self):
+        s="I have a happy dog"
+        linkage=understander.parseString(s, self.debug)
+        self.assertIsNotNone(linkage)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        classification=understander.clasifySentence(links)
+        self.assertEqual(classification, "declarative")
+        understander.parseDeclarative(links, words, combinations, self.current)
+        
+        s="do I have a happy dog"
+        linkage=understander.parseString(s, self.debug)
+        self.assertIsNotNone(linkage)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        classification=understander.clasifySentence(links)
+        self.assertEqual(classification, "interrogative")
+        result=understander.parseInterogative(links, words, combinations, self.current)
+        self.assertEqual(str(result), "yes")
+        
+        s="is my dog happy"
+        linkage=understander.parseString(s, self.debug)
+        self.assertIsNotNone(linkage)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        classification=understander.clasifySentence(links)
+        self.assertEqual(classification, "interrogative")
+        result=understander.parseInterogative(links, words, combinations, self.current)
+        self.assertEqual(str(result), "yes")
+        
+    def testLocation(self):
+        s="I am at the mall"
+        linkage=understander.parseString(s, self.debug)
+        self.assertIsNotNone(linkage)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        classification=understander.clasifySentence(links)
+        self.assertEqual(classification, "declarative")
+        understander.parseDeclarative(links, words, combinations, self.current)
+        
+        s="where am I"
+        linkage=understander.parseString(s, self.debug)
+        self.assertIsNotNone(linkage)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        classification=understander.clasifySentence(links)
+        self.assertEqual(classification, "interrogative")
+        result=understander.parseInterogative(links, words, combinations, self.current)
+        self.assertEqual(str(result), "the mall")
+        
+        s="what is my location"
+        linkage=understander.parseString(s, self.debug)
+        self.assertIsNotNone(linkage)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        classification=understander.clasifySentence(links)
+        self.assertEqual(classification, "interrogative")
+        result=understander.parseInterogative(links, words, combinations, self.current)
+        self.assertEqual(str(result), "the mall")
+    
+#    def testColor(self):
+#        s="I have a yellow dog"
+#        linkage=understander.parseString(s, self.debug)
+#        self.assertIsNotNone(linkage)
+#        links,words=understander.parseLinkage(linkage)
+#        combinations=understander.generateCombinations(links, words,self.current)
+#        classification=understander.clasifySentence(links)
+#        self.assertEqual(classification, "declarative")
+#        understander.parseDeclarative(links, words, combinations, self.current)
+#        
+#        s="what color is my dog"
+#        linkage=understander.parseString(s, self.debug)
+#        self.assertIsNotNone(linkage)
+#        links,words=understander.parseLinkage(linkage)
+#        combinations=understander.generateCombinations(links, words,self.current)
+#        classification=understander.clasifySentence(links)
+#        self.assertEqual(classification, "interrogative")
+#        result=understander.parseInterogative(links, words, combinations, self.current)
+#        self.assertEqual(str(result), "yellow")
         
 
 if __name__ == "__main__":
