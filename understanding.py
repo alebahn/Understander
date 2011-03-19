@@ -28,7 +28,8 @@ pronouns={"I"      :("I.p"     ,"me"      ,"my"       ,"mine.p"   ),#Personal
           "these"  :("these"   ,"these"   ,"these"    ,None       ),
           "who"    :("who"     ,"whom"    ,"whose"    ,"whose"    ),#Interrogative
           "what"   :("what"    ,"what"    ,"which"    ,None       ),
-          "where"  :("where"   ,"where"   ,None       ,None       )}
+          "where"  :("where"   ,"where"   ,None       ,None       ),
+          "when"   :("when"    ,"when"    ,None       ,None       )}
 #add Indefinite pronouns (may not be correct. check later
 for pronoun in ("another", "each", "either", "enough", "everything", "less", "little", "much", "neither", "nothing", "other", "plenty", "something", "both", "few", "fewer", "many", "others", "several", "all", "any", "more", "none", "some", "such"):
     pronouns[pronoun]=(pronoun,)*3+(None,)
@@ -44,10 +45,10 @@ def createPronoun(name,context):
         return personal(baseName,context,index)
     elif baseName in ("that","this","those","these"):
         pass
-    elif baseName in ("who","what","where"):
+    elif baseName in ("who","what","where","when"):
         return question(baseName,context,index)
     else:
-        raise Exception("Pronoun not defined.")
+        raise PronounError("Pronoun not defined.")
 
 def stripSub(name):
     return str(name).partition('.')[0]
@@ -115,8 +116,12 @@ class prepositionalPhrase(object):
         self.noun=obj
     def modify(self,subj):
         if(self.preposition=="at"): #assume location for now
-            subj.possessions.add(self.noun)
-            subj.location=self.noun
+            if isinstance(self.noun,time):
+                subj.possessions.add(self.noun)
+                subj.time=self.noun
+            else:
+                subj.possessions.add(self.noun)
+                subj.location=self.noun
 
 class entity(metaclass=kind):
     def __new__(cls,*args,**kargs):
@@ -251,6 +256,8 @@ class entity(metaclass=kind):
         elif isinstance(DO,question):
             if DO.kind==place:
                 return self.location
+            if DO.kind==time:
+                return self.time
             else:
                 return self #may need to be changed
         elif DO.name.partition(' ')[0] in ('a','an'):
@@ -324,10 +331,13 @@ class person(entity):
 class thing(entity):
     pass
 
-class place(thing):
+class place(entity):
     pass
 
 class location(place):
+    pass
+
+class time(entity):
     pass
 
 class plural(entity):
@@ -450,8 +460,10 @@ class question(pronoun):
             match=thing
         elif name=="where":
             match=place
+        elif name=="when":
+            match=time
         else:
-            raise pronounError("Invalid interrogative pronoun")
+            raise PronounError("Invalid interrogative pronoun")
         pronoun.__init__(self,name,context,decl,match,True)
         self.antecedent=None
     def __str__(self):
@@ -474,7 +486,7 @@ class question(pronoun):
         return DO
     be=verb(asker=_be_ask)
 
-class pronounError(Exception):
+class PronounError(Exception):
     def __init__(self, value):
         self.value = value
     def __str__(self):
@@ -538,7 +550,7 @@ class conversation:
         try:
             return getattr(subject,name)
         except AttributeError:
-            print(str(subject).capitalize()+" can not "+stripSub(name)+".") #mayhaps this should raise a different error
+            raise AttributeError(str(subject).capitalize()+" can not "+stripSub(name)+".") #mayhaps this should raise a different error
     def new(self,detr,type,*args,**kargs):
         type=stripSub(type)
         name=str(detr)+' '+type

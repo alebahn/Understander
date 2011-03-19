@@ -278,6 +278,36 @@ class Test(unittest.TestCase):
         self.assertEqual(classification, "interrogative")
         result=understander.parseInterogative(links, words, combinations, self.current)
         self.assertEqual(str(result), "the mall")
+        
+    def testTime(self):
+        s="I have an appointment at two o'clock"
+        linkage=understander.parseString(s, self.debug)
+        self.assertIsNotNone(linkage)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        classification=understander.clasifySentence(links)
+        self.assertEqual(classification, "declarative")
+        understander.parseDeclarative(links, words, combinations, self.current)
+        
+        s="when is my appointment"
+        linkage=understander.parseString(s, self.debug)
+        self.assertIsNotNone(linkage)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        classification=understander.clasifySentence(links)
+        self.assertEqual(classification, "interrogative")
+        result=understander.parseInterogative(links, words, combinations, self.current)
+        self.assertEqual(str(result), "ten o'clock")
+        
+#        s="what is the time of my appointment"
+#        linkage=understander.parseString(s, self.debug)
+#        self.assertIsNotNone(linkage)
+#        links,words=understander.parseLinkage(linkage)
+#        combinations=understander.generateCombinations(links, words,self.current)
+#        classification=understander.clasifySentence(links)
+#        self.assertEqual(classification, "interrogative")
+#        result=understander.parseInterogative(links, words, combinations, self.current)
+#        self.assertEqual(str(result), "ten o'clock")
     
 #    def testColor(self):
 #        s="I have a yellow dog"

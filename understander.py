@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 #from __future__ import print_function
 from linkgrammar import lp, Sentence, Linkage #,clg,ParseOptions,Dictionary
-from understanding import conversation, infinitive, adverb, stripSub
+from understanding import conversation, infinitive, adverb, stripSub, PronounError
 #import linkgrammar
 #import os
 #import subprocess
@@ -230,7 +230,7 @@ def parseDeclarative(links,words,combinations,current):
     current.verb(subject,verb)(directObject,adv=adv)
 
 if __name__ == "__main__":
-    debug=True #turn off debugging output
+    debug=False #turn on/off debugging output
     parser=lp()   #initialize the parser
     current=conversation()  #initialize the context
     #talker=festival.open()
@@ -259,11 +259,21 @@ if __name__ == "__main__":
                 response="What is "+stripSub(value.args[0])+"?"
                 print(response)
                 #talker.say(response)
-                raise
+                if debug:
+                    raise
             except AttributeError as value:
                 print(str(value.args[0]))
                 #talker.say(str(value.args[0]))
-                raise
+                if debug:
+                    raise
+            except PronounError as e:
+                print(e.value)
+                if debug:
+                    raise
+            except Exception as value:
+                print(str(value.args[0]))
+                if debug:
+                    raise
         #hereafter are grammatically incorrect commands
         elif 'run' in words:
             print(words)
