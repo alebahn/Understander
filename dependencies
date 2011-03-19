@@ -6,5 +6,5 @@ liblink-grammar4
 liblink-grammar4-dev
 festival
 pyfest
-python
-python-dev
+python3
+python3-dev
