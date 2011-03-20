@@ -62,6 +62,12 @@ def conjugate(verb,subject):
     else:
         return stripSub(tup[2])
 
+def detectKind(name):
+    if name in number.number_words:
+        return number
+    else:
+        return entity
+
 class kind(type):
     def __init__(cls,name,bases,dict):
         type.__init__(cls,name,bases,dict)
@@ -111,17 +117,26 @@ class interjection(object):
         return self.name
 
 class prepositionalPhrase(object):
-    def __init__(self,prep,obj):
+    def __init__(self,prep,obj,context):
         self.preposition=prep
-        self.noun=obj
+        #self.noun=obj
+        if(self.preposition=="at"):
+            if any(detectKind(word)==number for word in obj.split(' ')):
+                self.noun=time(obj,context)
+            else:
+                self.noun=location(str(obj),context)
+        context.add(self.noun,False)
+        self.name=name(str(prep)+' '+str(obj),context,self)
     def modify(self,subj):
-        if(self.preposition=="at"): #assume location for now
+        if(self.preposition=="at"):
             if isinstance(self.noun,time):
                 subj.possessions.add(self.noun)
                 subj.time=self.noun
             else:
                 subj.possessions.add(self.noun)
                 subj.location=self.noun
+    def __str__(self):
+        return str(self.name)
 
 class entity(metaclass=kind):
     def __new__(cls,*args,**kargs):
@@ -337,7 +352,13 @@ class place(entity):
 class location(place):
     pass
 
-class time(entity):
+class number(thing):
+    ones_place=dict((value,key) for (key,value) in enumerate(["zero","one","two","three","four","five","six","seven","eight","nine","ten","eleven","twelve","thirteen","fourteen","fifteen","sixteen","seventeen","eighteen","nineteen"]))
+    tens_place=dict((value,key*10+20) for (key,value) in enumerate(["twenty","thirty","forty","fifty","sixty","seventy","eighty","ninety"]))
+    place_marker={"hundred":2,"thousand":3,"million":6,"billion":9,"trillion":12}
+    number_words=list(ones_place.keys())+list(tens_place.keys())+list(place_marker.keys())
+
+class time(thing):
     pass
 
 class plural(entity):
@@ -497,7 +518,9 @@ class conversation:
         computerName=platform.node().capitalize()
         userName=getpass.getuser().capitalize()
         self._kinds={"kind":kind,"entity":entity,"name":name,"thing":thing,"person":person,
-                     "computer":computer,"user":user,"infinitive":infinitive,"pronoun":pronoun,"male":male,"female":female}
+                     "computer":computer,"user":user,"infinitive":infinitive,"pronoun":pronoun,
+                     "male":male,"female":female,"place":place,"location":location,"number":number,
+                     "time":time}
         self._entities={computerName:computer(computerName,self,True),userName:user(userName,self,True),"Vibranium":thing("Vibranium",self)}
         self._temp={}   #stores 'a/an' objects and possessives
         self._antecedents={"I":self._entities[userName],"you":self._entities[computerName]}
@@ -555,20 +578,19 @@ class conversation:
         type=stripSub(type)
         name=str(detr)+' '+type
         if type in self._kinds:
-            if detr in ("a","an"):
-                if name not in self._temp:
-                    self._temp[name]=self._kinds[type](name,self,*args,**kargs)
-            else:
-                if name not in self._entities:
-                    self._entities[name]=self._kinds[type](name,self,*args,**kargs)
+            self.add(self._kinds[type](name,self,*args,**kargs),detr in ("a","an"))
             return name
         else:
             self._kinds[type]=kind(type,(thing,),{})
-            if detr in ("a","an"):
-                self._temp[name]=self._kinds[type](name,self,*args,**kargs)
-            else:
-                self._entities[name]=self._kinds[type](name,self,*args,**kargs)
+            self.add(self._kinds[type](name,self,*args,**kargs),detr in ("a","an"))
             return name
+    def add(self,obj,temp=True):
+        if temp:
+            if str(obj) not in self._temp:
+                self._temp[str(obj)]=obj
+        else:
+            if str(obj) not in self._entities:
+                self._entities[str(obj)]=obj
     def possession(self,owner,name):
         owner=str(owner)
         name=stripSub(name)
@@ -600,7 +622,7 @@ class conversation:
         prep=stripSub(prep)
         obj=stripSub(obj)
         name=prep+' '+obj
-        prepPhrase=prepositionalPhrase(prep,obj)
+        prepPhrase=prepositionalPhrase(prep,obj,self)
         if name not in self._temp:
             self._temp[name]=prepPhrase
         else:

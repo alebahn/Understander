@@ -280,7 +280,16 @@ class Test(unittest.TestCase):
         self.assertEqual(str(result), "the mall")
         
     def testTime(self):
-        s="I have an appointment at two o'clock"
+        s="I have an appointment"
+        linkage=understander.parseString(s, self.debug)
+        self.assertIsNotNone(linkage)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        classification=understander.clasifySentence(links)
+        self.assertEqual(classification, "declarative")
+        understander.parseDeclarative(links, words, combinations, self.current)
+        
+        s="my appointment is at ten o'clock"
         linkage=understander.parseString(s, self.debug)
         self.assertIsNotNone(linkage)
         links,words=understander.parseLinkage(linkage)
