@@ -119,14 +119,16 @@ class interjection(object):
 class prepositionalPhrase(object):
     def __init__(self,prep,obj,context):
         self.preposition=prep
-        #self.noun=obj
         if(self.preposition=="at"):
             if any(detectKind(word)==number for word in obj.split(' ')):
                 self.noun=time(obj,context)
             else:
                 self.noun=location(str(obj),context)
-        context.add(self.noun,False)
+            context.add(self.noun,False)
+        if(self.preposition=="of"):
+            self.noun=context[obj]
         self.name=name(str(prep)+' '+str(obj),context,self)
+        self._context=context
     def modify(self,subj):
         if(self.preposition=="at"):
             if isinstance(self.noun,time):
@@ -135,6 +137,10 @@ class prepositionalPhrase(object):
             else:
                 subj.possessions.add(self.noun)
                 subj.location=self.noun
+        if(self.preposition=="of"):
+            subj=stripSub(subj)
+            fullName=subj+" "+str(self.name)
+            self._context.add(getattr(self.noun,subj),True,fullName)
     def __str__(self):
         return str(self.name)
 
@@ -584,13 +590,15 @@ class conversation:
             self._kinds[type]=kind(type,(thing,),{})
             self.add(self._kinds[type](name,self,*args,**kargs),detr in ("a","an"))
             return name
-    def add(self,obj,temp=True):
+    def add(self,obj,temp=True,name=None):
+        if name==None:
+            name=str(obj)
         if temp:
-            if str(obj) not in self._temp:
-                self._temp[str(obj)]=obj
+            if name not in self._temp:
+                self._temp[name]=obj
         else:
-            if str(obj) not in self._entities:
-                self._entities[str(obj)]=obj
+            if name not in self._entities:
+                self._entities[name]=obj
     def possession(self,owner,name):
         owner=str(owner)
         name=stripSub(name)

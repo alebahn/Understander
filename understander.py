@@ -32,8 +32,8 @@ def parseString(s,debug):
         return None
 
 def parseLinkage(linkage):
-    links={}
-    words={}
+    links={}    #dictionary of links to lists of word tuples {linkname:{sublink:[(left,right,domains)]}
+    words={}    #dictionary of words to lists of link tuples {word:[(linkname,sublink)]}
     for link in linkage:
         key="".join(char for char in link.label if char.isupper())
         subscript="".join(char for char in link.label if not char.isupper())
@@ -91,13 +91,14 @@ def generateCombinations(links,words,current):
                 detr=combinations[dlink]
                 nlink=link[1]
                 noun=combinations[nlink]
-                if str(detr) in ('a','an','the'):
-                    combination=current.new(detr,noun)
-                else:
-                    combination=current.possession(detr,noun)
-                for key in combinations:
-                    if combinations[key]==noun or combinations[key]==detr:
-                        combinations[key]=combination
+                if all(lName[0]!="M" for lName in words[nlink]):
+                    if str(detr) in ('a','an','the'):
+                        combination=current.new(detr,noun)
+                    else:
+                        combination=current.possession(detr,noun)
+                    for key in combinations:
+                        if combinations[key]==noun or combinations[key]==detr:
+                            combinations[key]=combination
     if 'A' in links:    #apply adjectives before the rest of the sentence is parsed
         for group in links['A'].values():
             for link in sorted(group,reverse=True):
@@ -120,6 +121,21 @@ def generateCombinations(links,words,current):
                 for key in combinations:
                     if combinations[key]==prep or combinations[key]==obj:
                         combinations[key]=combination
+    if "M" in links:    #apply prep-phrases
+        for group in links['M'].values():
+            for link in group:
+                nkey=link[0]
+                noun=combinations[nkey]
+                pkey=link[1]
+                pPhrase=current[combinations[pkey]]
+                pPhrase.modify(noun)
+                pPhrase=str(pPhrase)
+                combination=stripSub(noun)+" "+pPhrase
+                for key in combinations:
+                    if combinations[key]==noun or combinations[key]==pPhrase:
+                        combinations[key]=combination
+                
+        
     return combinations
 
 def clasifySentence(links):
@@ -230,8 +246,8 @@ def parseDeclarative(links,words,combinations,current):
     current.verb(subject,verb)(directObject,adv=adv)
 
 if __name__ == "__main__":
-    debug=False #turn on/off debugging output
-    parser=lp()   #initialize the parser
+    debug=True  #turn on/off debugging output
+    parser=lp() #initialize the parser
     current=conversation()  #initialize the context
     #talker=festival.open()
     
