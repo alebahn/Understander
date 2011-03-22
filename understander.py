@@ -275,7 +275,7 @@ def parseDeclarative(links,words,combinations,current):
     current.verb(subject,verb)(directObject,adv=adv)
 
 if __name__ == "__main__":
-    debug=True  #turn on/off debugging output
+    debug=False  #turn on/off debugging output
     parser=lp() #initialize the parser
     current=conversation()  #initialize the context
     #talker=festival.open()

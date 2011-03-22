@@ -376,42 +376,43 @@ class number(thing):
         else:
             raise numberError()
         self.getNumTuple() #check for number error
-    def getNumItems(self):  #optimize as generator
-        numlist=[]
+    def getItems(self):  #optimize as generator
+        last=None
         for num in self.value:
-            if len(numlist)>0:
-                last=numlist[len(numlist)-1]
             if num in self.ones_place:
-                if len(numlist)==0:
-                    numlist=[self.ones_place[num]]
+                if last==None:
+                    last=self.ones_place[num]
                 elif self.ones_place[num]==0:
-                    numlist.append(self.ones_place[num])
+                    yield last
+                    last=self.ones_place[num]
                 elif last%10!=0 or last==0:
-                    numlist.append(self.ones_place[num])
+                    yield last
+                    last=self.ones_place[num]
                 else:
-                    numlist[len(numlist)-1]+=self.ones_place[num]
+                    last+=self.ones_place[num]
             elif num in self.tens_place:
-                if len(numlist)==0:
-                    numlist=[self.tens_place[num]]
+                if last==None:
+                    last=self.tens_place[num]
                 elif last%100!=0 or last ==0:
-                    numlist.append(self.tens_place[num])
+                    yield last
+                    last=self.tens_place[num]
                 else:
-                    numlist[len(numlist)-1]+=self.tens_place[num]
+                    last+=self.tens_place[num]
             elif num in self.place_marker:
-                if len(numlist)==0:
-                    numlist=[10**self.place_marker[num]]
+                if last==None:
+                    last=10**self.place_marker[num]
                 elif last%(10**self.place_marker[num])==0:
                     raise numberError()
                 else:
                     less=last%(10**self.place_marker[num])
                     greater=last-less
-                    numlist[len(numlist)-1]=greater+less*10**self.place_marker[num]
-        return tuple(numlist)
+                    last=greater+less*10**self.place_marker[num]
+        yield last
     def getNumTuple(self):
-        return tuple(self.getNumItems())
+        return tuple(self.getItems())
     def __int__(self):
         sum=0
-        for value in self.getNumItems():
+        for value in self.getItems():
             if value==0:
                 sum*=10
             else:
