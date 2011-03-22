@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 #from __future__ import print_function
 from linkgrammar import lp, Sentence, Linkage #,clg,ParseOptions,Dictionary
-from understanding import conversation, infinitive, adverb, stripSub, PronounError
+from understanding import conversation, infinitive, adverb, stripSub, PronounError,\
+    number
 #import linkgrammar
 #import os
 #import subprocess
@@ -65,7 +66,7 @@ def generateCombinations(links,words,current):
     combinations=dict((key,key) for key in words)
     #figure out a way to treat the versions that start with "ID"
     #remove spacer variable
-    for name in ('AN','G','ND','TM','TW','TY'): #combine some two-word items together
+    for name in ('AN','G','TM','TW','TY'): #combine some two-word items together
         if name in links:
             for group in links[name].values():
                 for link in group:
@@ -83,7 +84,7 @@ def generateCombinations(links,words,current):
                 for link in group:
                     for key in combinations:
                         if combinations[key]==combinations[link[1]]:
-                            combinations[key]=combinations[link[0]]
+                            combinations[key]=combinations[link[0]];
     if 'D' in links:    #join determiners to noun
         for group in links['D'].values():
             for link in sorted(group):
@@ -109,6 +110,34 @@ def generateCombinations(links,words,current):
                 combination=current.adjective(adj,noun)
                 for key in combinations:
                     if combinations[key]==noun or combinations[key]==detr:
+                        combinations[key]=combination
+    if 'NA' in links: #combine two-word numbers
+        for group in links['NA'].values():
+            for link in group:
+                n1key=link[0]
+                num1=combinations[n1key]
+                if num1 in current:
+                    num1=current[num1]
+                else:
+                    num1=number(num1,current)
+                n2key=link[1]
+                num2=combinations[n2key]
+                if num2 in current:
+                    num2=current[num2]
+                else:
+                    num2=number(num2,current)
+                combination=combinations[n1key]+" "+combinations[n2key]
+                current.add(number(combination,current,num1,num2),True)
+    if 'ND' in links: #combine number-word
+        for group in links['ND'].values():
+            for link in group:
+                pkey=link[0]
+                prep=combinations[pkey]
+                okey=link[1]
+                obj=combinations[okey]
+                combination=current.prepPhrase(prep,obj)
+                for key in combinations:
+                    if combinations[key]==prep or combinations[key]==obj:
                         combinations[key]=combination
     if 'J' in links: #combine prepositional phrases
         for group in links['J'].values():
@@ -253,6 +282,7 @@ if __name__ == "__main__":
     
     while True:
         s=input()
+        words=s.split(' ')
         linkage=parseString(s, debug)
         if linkage:
             links,words=parseLinkage(linkage)

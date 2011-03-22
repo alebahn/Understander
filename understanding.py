@@ -2,6 +2,9 @@ from __future__ import print_function
 from linkgrammar import Word
 import platform
 import getpass
+import datetime
+import time as timeMod
+import math
 #import subprocess
 
 #                          Present                                        Past
@@ -360,12 +363,69 @@ class location(place):
 
 class number(thing):
     ones_place=dict((value,key) for (key,value) in enumerate(["zero","one","two","three","four","five","six","seven","eight","nine","ten","eleven","twelve","thirteen","fourteen","fifteen","sixteen","seventeen","eighteen","nineteen"]))
+    ones_place["oh"]=0
     tens_place=dict((value,key*10+20) for (key,value) in enumerate(["twenty","thirty","forty","fifty","sixty","seventy","eighty","ninety"]))
     place_marker={"hundred":2,"thousand":3,"million":6,"billion":9,"trillion":12}
     number_words=list(ones_place.keys())+list(tens_place.keys())+list(place_marker.keys())
+    def __init__(self,called,context,num1=None,num2=None):
+        thing.__init__(self,called,context)
+        if num1==None or num2==None:
+            self.value=tuple(str(called).split('-'))
+        elif isinstance(num1, number) and isinstance(num2, number):
+            self.value=num1.value+num2.value
+        else:
+            raise numberError()
+        self.getNumTuple() #check for number error
+    def getNumItems(self):  #optimize as generator
+        numlist=[]
+        for num in self.value:
+            if len(numlist)>0:
+                last=numlist[len(numlist)-1]
+            if num in self.ones_place:
+                if len(numlist)==0:
+                    numlist=[self.ones_place[num]]
+                elif self.ones_place[num]==0:
+                    numlist.append(self.ones_place[num])
+                elif last%10!=0 or last==0:
+                    numlist.append(self.ones_place[num])
+                else:
+                    numlist[len(numlist)-1]+=self.ones_place[num]
+            elif num in self.tens_place:
+                if len(numlist)==0:
+                    numlist=[self.tens_place[num]]
+                elif last%100!=0 or last ==0:
+                    numlist.append(self.tens_place[num])
+                else:
+                    numlist[len(numlist)-1]+=self.tens_place[num]
+            elif num in self.place_marker:
+                if len(numlist)==0:
+                    numlist=[10**self.place_marker[num]]
+                elif last%(10**self.place_marker[num])==0:
+                    raise numberError()
+                else:
+                    less=last%(10**self.place_marker[num])
+                    greater=last-less
+                    numlist[len(numlist)-1]=greater+less*10**self.place_marker[num]
+        return tuple(numlist)
+    def getNumTuple(self):
+        return tuple(self.getNumItems())
+    def __int__(self):
+        sum=0
+        for value in self.getNumItems():
+            if value==0:
+                sum*=10
+            else:
+                sum=sum*10**(math.floor(math.log10(value))+1)+value
+        return sum
+
+class numberError(Exception):
+    pass
+                
 
 class time(thing):
-    pass
+    def __init__(self,called,context):
+        thing.__init__(self,called,context)
+        self.time=timeMod.time()
 
 class plural(entity):
     def __new__(cls,name,context,entities,kind=thing):
