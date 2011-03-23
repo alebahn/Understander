@@ -66,7 +66,8 @@ def conjugate(verb,subject):
         return stripSub(tup[2])
 
 def detectKind(name):
-    if name in number.number_words:
+    name=str(name)
+    if all((word in number.number_words) for word in name.replace('-',' ').split(' ')):
         return number
     else:
         return entity
@@ -224,6 +225,8 @@ class entity(metaclass=kind):
     def _have_ask(self,DO):
         if DO.name.partition(' ')[0] in ('a','an'):
             return interjection(any(isinstance(item,type(DO)) for item in self.possessions))
+        elif isinstance(DO, question):
+            return plural("possessions",self._context,list(self.possessions)) #change name
         else:
             return interjection(DO in self.possessions)
     have=verb(_have_set,_have_get,asker=_have_ask,acter=_have_set)  #should acter be different?
@@ -433,7 +436,7 @@ class plural(entity):
         if len(entities)==0:
             return nothing(name,context,kind)
         elif len(entities)==1:
-            return entities[0]
+            return list(entities)[0]
         else:
             return entity.__new__(cls,name,context,entities,kind)
     def __init__(self,name,context,entities,kind=thing):
@@ -455,7 +458,7 @@ class plural(entity):
         return len(self._entities)
     @property
     def possessors(self):
-        return plural(str(self.name)+"'s possessors",self._context,filter(lambda ent: ent,(ent.possessor for ent in self._entities)),kind=person)
+        return plural(str(self.name)+"'s possessors",self._context,[ent.possessor for ent in self._entities if ent.possessor],kind=person)
 
 class nothing(entity):
     def __init__(self,called,context,kind=thing):
@@ -603,7 +606,7 @@ class conversation:
         else:
             raise KeyError(index)
     def __contains__(self,index):
-        return index in self._entities.keys() or index in self._kinds.keys() or index in reversePronouns.keys()
+        return index in self._entities.keys() or index in self._kinds.keys() or index in reversePronouns.keys() or index in self._temp.keys()
     def entity(self,name):
         name=str(name)
         if name in self._entities:
@@ -666,7 +669,13 @@ class conversation:
         fullName=stripSub(owner)+' '+name
         owner=self.entity(owner)
         if fullName not in self._temp:
-            self._temp[fullName]=getattr(owner,name)
+            temp=getattr(owner,name)
+            if not isinstance(temp, entity):
+                if isinstance(temp, (set,list,tuple)):
+                    temp=plural(fullName,self,temp)
+                else:
+                    raise Exception("trying to access non wrapped object of type "+str(type(temp)))
+            self._temp[fullName]=temp
         return fullName
     def adjective(self,adj,noun):
         adj=stripSub(adj)

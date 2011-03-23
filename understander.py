@@ -2,7 +2,7 @@
 #from __future__ import print_function
 from linkgrammar import lp, Sentence, Linkage #,clg,ParseOptions,Dictionary
 from understanding import conversation, infinitive, adverb, stripSub, PronounError,\
-    number
+    number, detectKind
 #import linkgrammar
 #import os
 #import subprocess
@@ -30,7 +30,7 @@ def parseString(s,debug):
         findProblems(linkage, sent)
         return linkage
     else:
-        return None
+        return Noneself.current[s]
 
 def parseLinkage(linkage):
     links={}    #dictionary of links to lists of word tuples {linkname:{sublink:[(left,right,domains)]}
@@ -85,6 +85,40 @@ def generateCombinations(links,words,current):
                     for key in combinations:
                         if combinations[key]==combinations[link[1]]:
                             combinations[key]=combinations[link[0]];
+    for name in ('NA','NN'):
+        if name in links:
+            for group in links[name].values():
+                for link in group:
+                    n1key=link[0]
+                    num1=combinations[n1key]
+                    if num1 in current:
+                        num1=current[num1]
+                    else:
+                        num1=number(num1,current)
+                    n2key=link[1]
+                    num2=combinations[n2key]
+                    if num2 in current:
+                        num2=current[num2]
+                    else:
+                        num2=number(num2,current)
+                    combination=str(combinations[n1key])+" "+str(combinations[n2key])
+                    current.add(number(combination,current,num1,num2),True,combination)
+                    num1=combinations[n1key]
+                    num2=combinations[n2key]
+                    for key in combinations:
+                        if combinations[key]==num1 or combinations[key]==num2:
+                            combinations[key]=combination
+    if 'ND' in links: #combine number-word
+        for group in links['ND'].values():
+            for link in group:
+                pkey=link[0]
+                prep=combinations[pkey]
+                okey=link[1]
+                obj=combinations[okey]
+                combination=current.prepPhrase(prep,obj)
+                for key in combinations:
+                    if combinations[key]==prep or combinations[key]==obj:
+                        combinations[key]=combination
     if 'D' in links:    #join determiners to noun
         for group in links['D'].values():
             for link in sorted(group):
@@ -95,6 +129,8 @@ def generateCombinations(links,words,current):
                 if all(lName[0]!="M" for lName in words[nlink]):
                     if str(detr) in ('a','an','the'):
                         combination=current.new(detr,noun)
+                    elif detectKind(detr)==number:
+                        combination=str(detr)+' '+str(noun)#actually do something
                     else:
                         combination=current.possession(detr,noun)
                     for key in combinations:
@@ -110,34 +146,6 @@ def generateCombinations(links,words,current):
                 combination=current.adjective(adj,noun)
                 for key in combinations:
                     if combinations[key]==noun or combinations[key]==detr:
-                        combinations[key]=combination
-    if 'NA' in links: #combine two-word numbers
-        for group in links['NA'].values():
-            for link in group:
-                n1key=link[0]
-                num1=combinations[n1key]
-                if num1 in current:
-                    num1=current[num1]
-                else:
-                    num1=number(num1,current)
-                n2key=link[1]
-                num2=combinations[n2key]
-                if num2 in current:
-                    num2=current[num2]
-                else:
-                    num2=number(num2,current)
-                combination=combinations[n1key]+" "+combinations[n2key]
-                current.add(number(combination,current,num1,num2),True)
-    if 'ND' in links: #combine number-word
-        for group in links['ND'].values():
-            for link in group:
-                pkey=link[0]
-                prep=combinations[pkey]
-                okey=link[1]
-                obj=combinations[okey]
-                combination=current.prepPhrase(prep,obj)
-                for key in combinations:
-                    if combinations[key]==prep or combinations[key]==obj:
                         combinations[key]=combination
     if 'J' in links: #combine prepositional phrases
         for group in links['J'].values():
@@ -275,7 +283,7 @@ def parseDeclarative(links,words,combinations,current):
     current.verb(subject,verb)(directObject,adv=adv)
 
 if __name__ == "__main__":
-    debug=False  #turn on/off debugging output
+    debug=True  #turn on/off debugging output
     parser=lp() #initialize the parser
     current=conversation()  #initialize the context
     #talker=festival.open()
