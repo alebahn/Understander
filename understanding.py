@@ -80,14 +80,16 @@ class kind(type):   #the type of all entities; keeps track of all of a single ki
     def all(self,context):
         return plural("all "+self.__name__,context,self._entities,kind=self)
 
-class verb(object):
-    def __init__(self,setter=None,helper=None,asker=None,acter=None):
+class verb(object): #TODO: remove getter?
+    def __init__(self,setter=None,getter=None,helper=None,asker=None,acter=None):
+        self._getter=getter
         self._setter=setter
         self._helper=helper
         self._asker=asker
         self._acter=acter
     class _verber(object):
         def __init__(self,instance,parent):
+            self._getter=parent._getter
             self._setter=parent._setter
             self._helper=parent._helper
             self._asker=parent._asker
