@@ -3,10 +3,11 @@ Created on Mar 16, 2011
 
 @author: aaron
 '''
-import unittest
 from linkgrammar import lp
-from understanding import conversation, number, numberError
+from understanding import conversation, number, numberError, time
 import understander
+import unittest
+import datetime
 
 class Test(unittest.TestCase):
     parser=lp()
@@ -218,6 +219,16 @@ class Test(unittest.TestCase):
         self.assertEqual(classification, "declarative")
         understander.parseDeclarative(links, words, combinations, self.current)
         
+        s="what is it"
+        linkage=understander.parseString(s, self.debug)
+        self.assertIsNotNone(linkage)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        classification=understander.clasifySentence(links)
+        self.assertEqual(classification, "interrogative")
+        result=understander.parseInterogative(links, words, combinations, self.current)
+        self.assertEqual(str(result), "cat")
+        
         s="its name is Daisy"
         linkage=understander.parseString(s, self.debug)
         self.assertIsNotNone(linkage)
@@ -417,7 +428,7 @@ class Test(unittest.TestCase):
         linkage=understander.parseString(s2, self.debug)
         self.assertIsNotNone(linkage)
         links,words=understander.parseLinkage(linkage)
-        combinations=understander.generateCombinations(links, words,self.current)
+        understander.generateCombinations(links, words,self.current)
         num=self.current[s]
         self.assertEqual(str(num), s)
         self.assertEqual(int(num),425)
@@ -485,6 +496,12 @@ class Test(unittest.TestCase):
         self.assertEqual(classification, "interrogative")
         result=understander.parseInterogative(links, words, combinations, self.current)
         self.assertEqual(str(result), "you")
+    
+    def testTimeConv(self):
+        s="five thirty"
+        num=self.compileNumber(s)
+        timeEnt=time(num,self.current)
+        self.assertEqual(timeEnt.getTime(), datetime.time(5,30))
     
 #    def testColor(self):
 #        s="I have a yellow dog"

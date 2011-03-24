@@ -1,9 +1,15 @@
+clean up code and make more uniform
+make methods of same type take similar arguments
+put all combination methods in conversation class
+standardize method __init__
+standardize name system
 time is converted
 Dates/numbers
 indefinite objects (a cat/a black cat)
 adjective classes (yellow is a color)
 numbers of objects
 Plurals
+objects retain their determiner (or one is added later)
 interrogative pro-adverbs (how, why)
 adjective opposites (happy/sad)
 pickling

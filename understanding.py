@@ -3,7 +3,6 @@ from linkgrammar import Word
 import platform
 import getpass
 import datetime
-import time as timeMod
 import math
 #import subprocess
 
@@ -53,10 +52,10 @@ def createPronoun(name,context):
     else:
         raise PronounError("Pronoun not defined.")
 
-def stripSub(name):
+def stripSub(name): #convert a name to a string and remove the subscript if present
     return str(name).partition('.')[0]
 
-def conjugate(verb,subject):
+def conjugate(verb,subject): #change the name of a verb for it's subject
     tup=conj[verb]
     if isinstance(subject,plural) or str(subject)=="you":
         return stripSub(tup[3])
@@ -65,21 +64,23 @@ def conjugate(verb,subject):
     else:
         return stripSub(tup[2])
 
-def detectKind(name):
+def detectKind(name):   #if possible, determine the type of an object by it's name
     name=str(name)
     if all((word in number.number_words) for word in name.replace('-',' ').split(' ')):
         return number
+    elif any((word in number.number_words) for word in name.replace('-',' ').split(' ')):
+        return time
     else:
         return entity
 
-class kind(type):
+class kind(type):   #the type of all entities; keeps track of all of a single kind
     def __init__(cls,name,bases,dict):
         type.__init__(cls,name,bases,dict)
         cls._entities=[]
-    def all(cls,context):
-        return plural("all "+cls.__name__,context,cls._entities,kind=cls)
+    def all(self,context):
+        return plural("all "+self.__name__,context,self._entities,kind=self)
 
-class verb(object): #remove getter?
+class verb(object): #TODO: remove getter?
     def __init__(self,setter=None,getter=None,helper=None,asker=None,acter=None):
         self._getter=getter
         self._setter=setter
@@ -124,7 +125,8 @@ class prepositionalPhrase(object):
     def __init__(self,prep,obj,context):
         self.preposition=prep
         if(self.preposition=="at"):
-            if any(detectKind(word)==number for word in obj.split(' ')):
+            objKind=detectKind(obj)
+            if objKind==number or objKind==time:
                 self.noun=time(obj,context)
             else:
                 self.noun=location(str(obj),context)
@@ -182,8 +184,6 @@ class entity(metaclass=kind):
     def possessors(self):
         return self.possessor
     def _have_set(self,DO=None,adv=None):
-        if isinstance(DO,pronoun):  #is this necessary any more?
-            DO=DO.antecedent
         if adv==None:
             self.possessions.add(DO)
             setattr(self,type(DO).__name__,DO)
@@ -213,7 +213,6 @@ class entity(metaclass=kind):
                 else:
                     print("Of course!")
                 if DO!=None:
-                    temp=DO.possessor
                     if DO.possessor==self:
                         DO.possessor=nothing("no one",self._context,person)
     def _have_get(self,DO=None):
@@ -226,7 +225,7 @@ class entity(metaclass=kind):
         if DO.name.partition(' ')[0] in ('a','an'):
             return interjection(any(isinstance(item,type(DO)) for item in self.possessions))
         elif isinstance(DO, question):
-            return plural("possessions",self._context,list(self.possessions)) #change name
+            return plural("possessions",self._context,list(self.possessions)) #TODO: change name
         else:
             return interjection(DO in self.possessions)
     have=verb(_have_set,_have_get,asker=_have_ask,acter=_have_set)  #should acter be different?
@@ -243,7 +242,7 @@ class entity(metaclass=kind):
                 self.properties.add(DO)
             elif isinstance(DO,prepositionalPhrase):
                 DO.modify(self)
-            elif DO.name.partition(' ')[0] in ('a','an'):   #modify owner's list?
+            elif DO.name.partition(' ')[0] in ('a','an'):   #TODO: modify owner's list?
                 if self.name.partition(' ')[0] in ('a','an'):
                     type(self).__bases__=(type(DO),)
                 elif issubclass(type(self),type(DO)):
@@ -262,21 +261,21 @@ class entity(metaclass=kind):
                     if key not in ("possessions","properties"):
                         setattr(self,key,getattr(DO,key))
                 for item in DO.possessions:
-                    self.possessions.add(item)      #what if both have the same generic object?
+                    self.possessions.add(item)      #TODO: what if both have the same generic object?
                 for item in DO.properties:
-                    self.properties.append(item)    #more complexity needed when oposited added
+                    self.properties.append(item)    #more complexity needed when opposites added
                 if str(DO.name) in self._context._entities:
                     self._context._entities[str(DO.name)]=self
                 if DO.possessor:
                     setattr(DO.possessor,type(DO).__name__,self)    #do all supertypes
                 #check class compatibility and remove from class instance lists
-                #raise Exception("WTF Batman!")    #add more redeffinition stuff
+                #raise Exception("WTF Batman!")    #TODO: add more redeffinition stuff
         elif adv=="not":
             if isinstance(DO,adjective):
                 if DO in self.properties:
                     self.properties.remove(DO)
             else:
-                raise Exception("Holy Cow Batman!") #add more undefinition stuff
+                raise Exception("Holy Cow Batman!") #TODO: add more undefinition stuff
     def _be_ask(self,DO=None):
         if isinstance(DO,adjective):
             return interjection(DO in self.properties)
@@ -286,7 +285,7 @@ class entity(metaclass=kind):
             if DO.kind==time:
                 return self.time
             else:
-                return self #may need to be changed
+                return self #TODO: may need to be changed
         elif DO.name.partition(' ')[0] in ('a','an'):
             return interjection(isinstance(self,type(DO)))
         else:
@@ -316,7 +315,7 @@ class name(entity):
     def partition(self,sep):
         return self.string.partition(sep)
     def _be_set(self,DO=None,adv=None):
-        if adv==None:   #make owner same as new name possessor?
+        if adv==None:   #TODO: make owner same as new name possessor?
             if isinstance(DO,adjective):
                 self.properties.add(DO)
             else:
@@ -378,8 +377,8 @@ class number(thing):
             self.value=num1.value+num2.value
         else:
             raise numberError()
-        self.getNumTuple() #check for number error
-    def getItems(self):  #optimize as generator
+        self.getNumTuple() #TODO: check for number error
+    def getItems(self):
         last=None
         for num in self.value:
             if num in self.ones_place:
@@ -428,8 +427,11 @@ class numberError(Exception):
 
 class time(thing):
     def __init__(self,called,context):
-        thing.__init__(self,called,context)
-        self.time=timeMod.time()
+        thing.__init__(self,str(called),context)
+        if isinstance(called,number):
+            self.time=datetime.time(*called.getNumTuple())
+    def getTime(self):
+        return self.time
 
 class plural(entity):
     def __new__(cls,name,context,entities,kind=thing):
@@ -445,7 +447,7 @@ class plural(entity):
             raise Exception("not an entity")
         self._entities=list(entities)
         self.kind=kind
-    def __str__(self):  #declinate
+    def __str__(self):  #TODO: declinate
         if len(self._entities)==2:
             return ' and '.join(str(ent) for ent in self._entities)
         else:
@@ -473,11 +475,11 @@ class nothing(entity):
         self.decl=0
         self.properties=set()
         self.kind=kind
-    def __str__(self):  #declinate
+    def __str__(self):  #TODO: declinate
         if issubclass(self.kind,person):
-           return "no one"  #nobody?
+            return "no one"  #nobody?
         else:
-           return "nothing"
+            return "nothing"
     def __len__(self):
         return 0
 
@@ -564,7 +566,7 @@ class question(pronoun):
             return pronoun.__str__(self)
     def __getattribute__(self,name):
         return object.__getattribute__(self,name)
-    def _have_ask(self,DO):         #implement more accurate answer
+    def _have_ask(self,DO):         #TODO: implement more accurate answer
         if DO.name.partition(' ')[0] in ('a','an'):
             alls=type(DO).all(self._context)
             result=alls.possessors
@@ -592,7 +594,7 @@ class conversation:
                      "male":male,"female":female,"place":place,"location":location,"number":number,
                      "time":time}
         self._entities={computerName:computer(computerName,self,True),userName:user(userName,self,True),"Vibranium":thing("Vibranium",self)}
-        self._temp={}   #stores 'a/an' objects and possessives
+        self._temp={}   #stores 'a/an' objects, possessives, prepositional phrases, and numbers
         self._antecedents={"I":self._entities[userName],"you":self._entities[computerName]}
     def getAntecedent(self,pronoun):
         return self._antecedents[pronoun]

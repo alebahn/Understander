@@ -30,7 +30,7 @@ def parseString(s,debug):
         findProblems(linkage, sent)
         return linkage
     else:
-        return Noneself.current[s]
+        return None
 
 def parseLinkage(linkage):
     links={}    #dictionary of links to lists of word tuples {linkname:{sublink:[(left,right,domains)]}
@@ -64,8 +64,8 @@ def printLinks(links):
 
 def generateCombinations(links,words,current):
     combinations=dict((key,key) for key in words)
-    #figure out a way to treat the versions that start with "ID"
-    #remove spacer variable
+    #TODO: figure out a way to treat the versions that start with "ID"
+    #TODO: remove spacer variable
     for name in ('AN','G','TM','TW','TY'): #combine some two-word items together
         if name in links:
             for group in links[name].values():
@@ -111,13 +111,13 @@ def generateCombinations(links,words,current):
     if 'ND' in links: #combine number-word
         for group in links['ND'].values():
             for link in group:
-                pkey=link[0]
-                prep=combinations[pkey]
+                nlink=link[0]
+                num=combinations[nlink]
                 okey=link[1]
                 obj=combinations[okey]
-                combination=current.prepPhrase(prep,obj)
+                combination=str(num)+" "+str(obj)
                 for key in combinations:
-                    if combinations[key]==prep or combinations[key]==obj:
+                    if combinations[key]==num or combinations[key]==obj:
                         combinations[key]=combination
     if 'D' in links:    #join determiners to noun
         for group in links['D'].values():
@@ -130,7 +130,7 @@ def generateCombinations(links,words,current):
                     if str(detr) in ('a','an','the'):
                         combination=current.new(detr,noun)
                     elif detectKind(detr)==number:
-                        combination=str(detr)+' '+str(noun)#actually do something
+                        combination=str(detr)+' '+str(noun)#TODO: actually do something
                     else:
                         combination=current.possession(detr,noun)
                     for key in combinations:
@@ -283,7 +283,7 @@ def parseDeclarative(links,words,combinations,current):
     current.verb(subject,verb)(directObject,adv=adv)
 
 if __name__ == "__main__":
-    debug=True  #turn on/off debugging output
+    debug=False  #turn on/off debugging output
     parser=lp() #initialize the parser
     current=conversation()  #initialize the context
     #talker=festival.open()
