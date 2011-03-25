@@ -301,7 +301,7 @@ if __name__ == "__main__":
     #talker=festival.open()
     
     while True:
-        s=input()
+        s=input(">> ")
         words=s.split(' ')
         linkage=parseString(s, debug)
         if linkage:
@@ -341,6 +341,8 @@ if __name__ == "__main__":
             print(words)
         elif 'exit' in words:
             print(words)
+        elif 'debug' in words:
+            debug=not debug
         else:
             print("My responses are limited. Please use precise English")
     # For now explicitly delete the linkage

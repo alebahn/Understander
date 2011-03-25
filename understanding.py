@@ -242,13 +242,15 @@ class entity(metaclass=kind):
                 else:
                     raise Exception("How can a "+type(self).__name__+" be "+str(DO.name)+"?")
             else:
+                if not DO.possessor:
+                    DO.possessor=self.possessor
                 for key in DO.__dict__:
                     if key not in ("possessions","properties"):
                         setattr(self,key,getattr(DO,key))
                 for item in DO.possessions:
                     self.possessions.add(item)      #TODO: what if both have the same generic object?
                 for item in DO.properties:
-                    self.properties.append(item)    #more complexity needed when opposites added
+                    self.properties.add(item)    #TODO: more complexity needed when opposites added
                 if str(DO.name) in self._context._entities:
                     self._context._entities[str(DO.name)]=self
                 if DO.possessor:
@@ -260,7 +262,7 @@ class entity(metaclass=kind):
                 if DO in self.properties:
                     self.properties.remove(DO)
             else:
-                raise Exception("Holy Cow Batman!") #TODO: add more undefinition stuff
+                raise Exception("What is it then?") #TODO: add more undefinition stuff
     def _be_ask(self,DO=None):
         if isinstance(DO,adjective):
             return interjection(DO in self.properties)

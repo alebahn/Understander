@@ -348,6 +348,16 @@ class Test(unittest.TestCase):
         understander.parseDeclarative(links, words, combinations,self.current)
         self.assertEqual(self.ff.getLast(1), "Of course it is!")
         
+        s="a cat is not an animal"
+        linkage=understander.parseString(s, self.debug)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        try:
+            understander.parseDeclarative(links, words, combinations,self.current)
+            self.fail("exception not raised")
+        except Exception as e:
+            self.assertEqual(e.args[0], "What is it then?")
+        
         s="is a cat an animal"
         linkage=understander.parseString(s, self.debug)
         links,words=understander.parseLinkage(linkage)
@@ -382,6 +392,109 @@ class Test(unittest.TestCase):
         result=understander.parseInterogative(links, words, combinations, self.current)
         self.assertEqual(str(result), "no")
     
+    def testRedefinition1(self):
+        s="I have a friend"
+        linkage=understander.parseString(s, self.debug)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        understander.parseDeclarative(links, words, combinations,self.current)
+        
+        s="a friend is a person"
+        linkage=understander.parseString(s, self.debug)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        understander.parseDeclarative(links, words, combinations,self.current)
+        
+        s="Bob is a person"
+        linkage=understander.parseString(s, self.debug)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        understander.parseDeclarative(links, words, combinations,self.current)
+        
+        s="Bob has a dog"
+        linkage=understander.parseString(s, self.debug)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        understander.parseDeclarative(links, words, combinations,self.current)
+        
+        s="Bob is happy"
+        linkage=understander.parseString(s, self.debug)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        understander.parseDeclarative(links, words, combinations,self.current)
+        
+        s="my friend is Bob"
+        linkage=understander.parseString(s, self.debug)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        understander.parseDeclarative(links, words, combinations,self.current)
+        
+        s="does my friend have a dog"
+        linkage=understander.parseString(s, self.debug)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        result=understander.parseInterogative(links, words, combinations, self.current)
+        self.assertEqual(str(result), "yes")
+        
+        s="is my friend happy"
+        linkage=understander.parseString(s, self.debug)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        result=understander.parseInterogative(links, words, combinations, self.current)
+        self.assertEqual(str(result), "yes")
+    
+    def testRedefinition2(self):
+        s="I have a friend"
+        linkage=understander.parseString(s, self.debug)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        understander.parseDeclarative(links, words, combinations,self.current)
+        
+        s="a friend is a person"
+        linkage=understander.parseString(s, self.debug)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        understander.parseDeclarative(links, words, combinations,self.current)
+        
+        s="Bob is a person"
+        linkage=understander.parseString(s, self.debug)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        understander.parseDeclarative(links, words, combinations,self.current)
+        
+        s="Bob is my friend"
+        linkage=understander.parseString(s, self.debug)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        understander.parseDeclarative(links, words, combinations,self.current)
+        
+        s="who has Bob"
+        linkage=understander.parseString(s, self.debug)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        result=understander.parseInterogative(links, words, combinations, self.current)
+        self.assertEqual(str(result), "you")
+    
+    def testRedefinition3(self):
+        s="I have a dog"
+        linkage=understander.parseString(s, self.debug)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        understander.parseDeclarative(links, words, combinations,self.current)
+        
+        s="my dog is the dog"
+        linkage=understander.parseString(s, self.debug)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        understander.parseDeclarative(links, words, combinations,self.current)
+        
+        s="who has the dog"
+        linkage=understander.parseString(s, self.debug)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        result=understander.parseInterogative(links, words, combinations, self.current)
+        self.assertEqual(str(result), "you")
+    
     def testEasterEgg(self):
         s="create Vibranium"
         linkage=understander.parseString(s, self.debug)
@@ -396,6 +509,16 @@ class Test(unittest.TestCase):
         links,words=understander.parseLinkage(linkage)
         combinations=understander.generateCombinations(links, words,self.current)
         understander.parseDeclarative(links, words, combinations,self.current)
+        
+        s="a cat is a person"
+        linkage=understander.parseString(s, self.debug)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        try:
+            understander.parseDeclarative(links, words, combinations,self.current)
+            self.fail("Exception not raised")
+        except Exception as e:
+            self.assertEqual(e.args[0], "How can a cat be a person?")
         
         s="I have a cat"
         linkage=understander.parseString(s, self.debug)
@@ -522,6 +645,19 @@ class Test(unittest.TestCase):
         combinations=understander.generateCombinations(links, words,self.current)
         result=understander.parseInterogative(links, words, combinations, self.current)
         self.assertEqual(str(result), "yes")
+        
+        s="I am not happy"
+        linkage=understander.parseString(s, self.debug)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        understander.parseDeclarative(links, words, combinations, self.current)
+        
+        s="am I happy"
+        linkage=understander.parseString(s, self.debug)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        result=understander.parseInterogative(links, words, combinations, self.current)
+        self.assertEqual(str(result), "no")
         
     def testAdjective2(self):
         s="I have a happy dog"
