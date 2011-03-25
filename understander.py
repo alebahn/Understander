@@ -1,33 +1,33 @@
 #!/usr/bin/env python3
 #from __future__ import print_function
 from linkgrammar import lp, Sentence, Linkage #,clg,ParseOptions,Dictionary
-from understanding import conversation, infinitive, adverb, stripSub, PronounError,\
-    number, detectKind
+from understanding import conversation, infinitive, adverb, stripSub, number, detectKind
+import sys
 #import linkgrammar
 #import os
 #import subprocess
 #import festival
 
-def findProblems(linkage,sent):     #TODO: replace [~] words and return error code
+def findProblems(linkage,sent,outFile):     #TODO: replace [~] words and return error code
     for i, word in enumerate(linkage.get_words()):
         index=word.find('[~]')
-        if index>-1:
-            print("I am assuming '"+sent[i]+"' should be '"+word.replace('[~]','')+"'.")
+        if index>-1:    #only works if spell checking is enabled
+            print("I am assuming '"+sent[i]+"' should be '"+word.replace('[~]','')+"'.",file=outFile)
         index=word.find('[?]')
         if index>-1:
-            print("I do not recognize '"+sent[i]+"'.")
+            print("I do not recognize '"+sent[i]+"'.",file=outFile)
         index=word.find('[!]')
         if index>-1:
-            print("I do not recognize '"+sent[i]+"'.")
+            print("I do not recognize '"+sent[i]+"'.",file=outFile)
     
 
-def parseString(s,debug):
+def parseString(s,debug,outFile=sys.stdout):
     sent = Sentence(s)
     if sent.parse():
         linkage = Linkage(0,sent)
         if debug:
             linkage.print_diagram()
-        findProblems(linkage, sent)
+        findProblems(linkage, sent, outFile)
         return linkage
     else:
         return None
@@ -91,12 +91,12 @@ def generateCombinations(links,words,current):
                 for link in group:
                     n1key=link[0]
                     num1=combinations[n1key]
+                    n2key=link[1]
+                    num2=combinations[n2key]
                     if num1 in current:
                         num1=current[num1]
                     else:
                         num1=number(num1,current)
-                    n2key=link[1]
-                    num2=combinations[n2key]
                     if num2 in current:
                         num2=current[num2]
                     else:
@@ -231,12 +231,24 @@ def parseImperative(links,words,combinations,current):
     if any(tups[0]=='O' for tups in words[verb]):
         objectLinks=[tups for tups in words[verb] if tups[0]=='O']
         directObject=links['O'][objectLinks[0][1]][0][1]
+        verb=combinations[verb]
+        directObject=combinations[directObject]
+        directObject=current[directObject]
     elif any(tups[0]== 'P' for tups in words[verb]):
         objectLinks=[tups for tups in words[verb] if tups[0]=='P']
         directObject=links['P'][objectLinks[0][1]][0][1]
-    verb=combinations[verb]
-    directObject=combinations[directObject]
-    return current.verb(subject,verb).act(current[directObject])
+        verb=combinations[verb]
+        directObject=combinations[directObject]
+        directObject=current[directObject]
+    elif any(tups[0]=='I' for tups in words[verb]):
+        inf=links['I'][[tups for tups in words[verb] if tups[0]=='I'][0][1]][0][1]
+        infLinks=words[inf]
+        inf=combinations[inf]
+        if any(tups[0]=='O' for tups in infLinks):
+            directObject=links['O'][[tups for tups in infLinks if tups[0]=='O'][0][1]][0][1]
+        directObject=combinations[directObject]
+        directObject=infinitive(current,inf,current[directObject])
+    return current.verb(subject,verb).act(directObject)
 
 def parseDeclarative(links,words,combinations,current):
     if 'S' in links:
@@ -285,7 +297,7 @@ def parseDeclarative(links,words,combinations,current):
 if __name__ == "__main__":
     debug=False  #turn on/off debugging output
     parser=lp() #initialize the parser
-    current=conversation()  #initialize the context
+    current=conversation(sys.stdout)  #initialize the context
     #talker=festival.open()
     
     while True:
@@ -318,10 +330,6 @@ if __name__ == "__main__":
             except AttributeError as value:
                 print(str(value.args[0]))
                 #talker.say(str(value.args[0]))
-                if debug:
-                    raise
-            except PronounError as e:
-                print(e.value)
                 if debug:
                     raise
             except Exception as value:

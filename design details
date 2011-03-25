@@ -1,0 +1,16 @@
+kind-the type of all entities
+entity-the base class of all user objects
+verb-an adapter class between a function callable by the user and the user
+	setter-sets values in declarative sentences
+	asker-gets values in interrogative sentences
+	acter-sets values in imperative sentences
+	helper-called the direct object for a helping verb
+name-an entity containing a string identity of an entity
+	it is used to access the entity only if it is visible from the permanent entity list
+conversation-an object containing all entities mentioned in a single sitting
+
+declination-the way a pronoun is represented based off usage
+conjugation-the way a verb is represented based off the subject
+
+generate combinations calls a function of conversation with words.
+	The function generates an entity and returns the name under which the entity is stored.

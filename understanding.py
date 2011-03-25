@@ -1,4 +1,3 @@
-from __future__ import print_function
 from linkgrammar import Word
 import platform
 import getpass
@@ -20,7 +19,7 @@ for contraction in ("'m","'re","'s"):
 pronouns={"I"      :("I.p"     ,"me"      ,"my"       ,"mine.p"   ),#Personal
 	      "you"    :("you"     ,"you"     ,"your"     ,"yours"    ),
           "he"     :("he"      ,"him"     ,"his"      ,"his"      ),
-          "she"    :("she"     ,"her"     ,"her"      ,"hers"     ),
+          "she"    :("she"     ,"her"     ,"her.d"     ,"hers"     ),
           "it"     :("it"      ,"it"      ,"its"      ,None       ),
           "we"     :("we"      ,"us"      ,"our"      ,"ours"     ),
           "they"   :("they"    ,"them"    ,"their"    ,"theirs"   ),
@@ -49,8 +48,6 @@ def createPronoun(name,context):
         pass
     elif baseName in ("who","what","where","when"):
         return question(baseName,context,index)
-    else:
-        raise PronounError("Pronoun not defined.")
 
 def stripSub(name): #convert a name to a string and remove the subscript if present
     return str(name).partition('.')[0]
@@ -99,9 +96,6 @@ class verb(object):
             else:
                 return self._setter(self._instance,*args,**kargs)
         def ask(self,*args,**kargs):
-#            if any(isinstance(arg,question) for arg in args) or any(isinstance(arg,question) for arg in kargs.values()):
-#                return self._getter(self._instance,*args,**kargs)
-#            else:
             return self._asker(self._instance,*args,**kargs)
         def act(self,*args,**kargs):
             return self._acter(self._instance,*args,**kargs)
@@ -188,7 +182,6 @@ class entity(metaclass=kind):
             if DO!=None:
                 if DO.possessor:
                     DO.possessor.possessions.remove(DO)
-                    print(type(DO).__name__)
                     delattr(DO.possessor,type(DO).__name__)
                 DO.possessor=self
                 if DO.name.partition(' ')[0] in ('a','an'):
@@ -197,28 +190,22 @@ class entity(metaclass=kind):
         elif adv=="not":
             if DO.name.partition(' ')[0] in ('a','an'):
                 if any(isinstance(item,type(DO)) for item in self.possessions):
-                    for item in filter(lambda item:isinstance(item,type(DO)),self.possessions):
+                    for item in [item for item in self.possessions if isinstance(item,type(DO))]:
                         item.possessor=nothing("no one",self._context,person)
                         self.possessions.remove(item)
                     delattr(self,type(DO).__name__)
                 else:
-                    print("Of course!")
+                    print("Of course!",file=self._context.outFile)
             else:
                 if DO in self.possessions:
                     self.possessions.remove(DO)
                     if getattr(self,type(DO).__name__)==DO:
                         delattr(self,type(DO).__name__)
                 else:
-                    print("Of course!")
+                    print("Of course!",file=self._context.outFile)
                 if DO!=None:
                     if DO.possessor==self:
                         DO.possessor=nothing("no one",self._context,person)
-    def _have_get(self,DO=None):
-        if any(isinstance(item,DO.kind) for item in self.possessions):
-            returnValue=plural("possessions",self._context,[item for item in self.possessions if isinstance(item,DO.kind)])   #change name, mess with declination.
-            returnValue.declinate(1)
-            return returnValue
-        return nothing("no one",self._context,entity)
     def _have_ask(self,DO):
         if DO.name.partition(' ')[0] in ('a','an'):
             return interjection(any(isinstance(item,type(DO)) for item in self.possessions))
@@ -226,7 +213,7 @@ class entity(metaclass=kind):
             return plural("possessions",self._context,list(self.possessions)) #TODO: change name
         else:
             return interjection(DO in self.possessions)
-    have=verb(_have_set,_have_get,asker=_have_ask,acter=_have_set)  #should acter be different?
+    have=verb(_have_set,asker=_have_ask,acter=_have_set)  #should acter be different?
     def _do_help(self,DO=None,adv=None):
         return getattr(self,DO.verb)(DO.DO,adv=adv)
     def _do_ask(self,DO=None):
@@ -241,10 +228,10 @@ class entity(metaclass=kind):
             elif isinstance(DO,prepositionalPhrase):
                 DO.modify(self)
             elif DO.name.partition(' ')[0] in ('a','an'):   #TODO: modify owner's list?
-                if self.name.partition(' ')[0] in ('a','an'):
+                if issubclass(type(self),type(DO)):
+                    print("Of course it is!",file=self._context.outFile)
+                elif self.name.partition(' ')[0] in ('a','an') and issubclass(type(DO),type(self).__base__):
                     type(self).__bases__=(type(DO),)
-                elif issubclass(type(self),type(DO)):
-                    print("Of course it is!")
                 elif issubclass(type(DO),type(self)):
                     cls=type(DO)
                     while(cls is not type(self)):
@@ -253,7 +240,7 @@ class entity(metaclass=kind):
                     self.__class__=type(DO)
                     setattr(self.possessor,type(DO).__name__,self)
                 else:
-                    print("How can a",type(self).__name__,"be",str(DO.name)+"?")
+                    raise Exception("How can a",type(self).__name__,"be",str(DO.name)+"?")
             else:
                 for key in DO.__dict__:
                     if key not in ("possessions","properties"):
@@ -282,8 +269,6 @@ class entity(metaclass=kind):
                 return self.location
             if DO.kind==time:
                 return self.time
-            else:
-                return self #TODO: may need to be changed
         elif DO.name.partition(' ')[0] in ('a','an'):
             return interjection(isinstance(self,type(DO)))
         else:
@@ -315,11 +300,11 @@ class name(entity):
     def _be_set(self,DO=None,adv=None):
         if adv==None:   #TODO: make owner same as new name possessor?
             if isinstance(DO,adjective):
-                self.properties.add(DO)
+                self.properties.append(DO)
             else:
                 self.string=str(DO.name)
         elif adv=="not":
-            print("What is it then?")
+            print("What is it then?",file=self._context.outFile)
     def _be_ask(self,DO=None):
         if isinstance(DO,adjective):
             return interjection(DO in self.properties)
@@ -342,7 +327,7 @@ class adjective(entity):
 
 class adverb(entity):
     def __eq__(self,other):
-        if isinstance(other,adjective):
+        if isinstance(other,adverb):
             return self.name==other.name
         elif isinstance(other,str) or isinstance(other,name):
             return self.name==other
@@ -536,7 +521,7 @@ class personal(pronoun):
         if name == "it":
             match=thing
         elif name == "they":
-            match=entity
+            match=plural
         else:
             match=person
         singular = name not in ("you","we","they")
@@ -553,40 +538,29 @@ class question(pronoun):
             match=place
         elif name=="when":
             match=time
-        else:
-            raise PronounError("Invalid interrogative pronoun")
         pronoun.__init__(self,name,context,decl,match,True)
         self.antecedent=None
-    def __str__(self):
-        if self.antecedent==None:
-            return pronouns[str(self.name)][self.decl]
-        else:
-            return pronoun.__str__(self)
     def __getattribute__(self,name):
         return object.__getattribute__(self,name)
     def _have_ask(self,DO):         #TODO: implement more accurate answer
         if DO.name.partition(' ')[0] in ('a','an'):
             alls=type(DO).all(self._context)
             result=alls.possessors
-            result.declinate(0)
+            result.declinate(1)
             return result
-        DO.possessor.declinate(0)
-        return DO.possessor
+        DO.possessor.declinate(1)
+        return DO.possessors
     have=verb(asker=_have_ask)
     def _be_ask(self,DO):
+        DO.declinate(1)
         return DO
     be=verb(asker=_be_ask)
 
-class PronounError(Exception):
-    def __init__(self, value):
-        self.value = value
-    def __str__(self):
-        return repr(self.value)
-
 class conversation:
-    def __init__(self):
+    def __init__(self,outFile):
         computerName=platform.node().capitalize()
         userName=getpass.getuser().capitalize()
+        self.outFile=outFile
         self._kinds={"kind":kind,"entity":entity,"name":name,"thing":thing,"person":person,
                      "computer":computer,"user":user,"infinitive":infinitive,"pronoun":pronoun,
                      "male":male,"female":female,"place":place,"location":location,"number":number,
@@ -629,6 +603,8 @@ class conversation:
             self._antecedents["she"]=result
         elif isinstance(result,person):
             self._antecedents["he"]=result
+        elif isinstance(result,plural):
+            self._antecedents["they"]=result
         else:
             self._antecedents["it"]=result
         return result
@@ -651,7 +627,7 @@ class conversation:
             self.add(self._kinds[type](name,self,*args,**kargs),detr in ("a","an"))
             return name
         else:
-            self._kinds[type]=kind(type,(thing,),{})
+            self._kinds[type]=kind(type,(entity,),{})
             self.add(self._kinds[type](name,self,*args,**kargs),detr in ("a","an"))
             return name
     def add(self,obj,temp=True,name=None):
@@ -674,7 +650,7 @@ class conversation:
                 if isinstance(temp, (set,list,tuple)):
                     temp=plural(fullName,self,temp)
                 else:
-                    raise Exception("trying to access non wrapped object of type "+str(type(temp)))
+                    raise Exception("You made an invalid attempt to access non wrapped object of type "+str(type(temp).__name__)+".")
             self._temp[fullName]=temp
         return fullName
     def adjective(self,adj,noun):
@@ -696,6 +672,8 @@ class conversation:
                 item.be(self[adj+'.a'])
                 self._entities[name]=item
         return name
+    def number(self,num1,num2):
+        pass
     def prepPhrase(self,prep,obj):
         prep=stripSub(prep)
         obj=stripSub(obj)
