@@ -240,7 +240,7 @@ class entity(metaclass=kind):
                     self.__class__=type(DO)
                     setattr(self.possessor,type(DO).__name__,self)
                 else:
-                    raise Exception("How can a",type(self).__name__,"be",str(DO.name)+"?")
+                    raise Exception("How can a "+type(self).__name__+" be "+str(DO.name)+"?")
             else:
                 for key in DO.__dict__:
                     if key not in ("possessions","properties"):
