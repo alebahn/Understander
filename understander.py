@@ -93,18 +93,7 @@ def generateCombinations(links,words,current):
                     num1=combinations[n1key]
                     n2key=link[1]
                     num2=combinations[n2key]
-                    if num1 in current:
-                        num1=current[num1]
-                    else:
-                        num1=number(num1,current)
-                    if num2 in current:
-                        num2=current[num2]
-                    else:
-                        num2=number(num2,current)
-                    combination=str(combinations[n1key])+" "+str(combinations[n2key])
-                    current.add(number(combination,current,num1,num2),True,combination)
-                    num1=combinations[n1key]
-                    num2=combinations[n2key]
+                    combination=current.number(num1,num2)
                     for key in combinations:
                         if combinations[key]==num1 or combinations[key]==num2:
                             combinations[key]=combination
@@ -164,10 +153,11 @@ def generateCombinations(links,words,current):
                 nkey=link[0]
                 noun=combinations[nkey]
                 pkey=link[1]
-                pPhrase=current[combinations[pkey]]
-                pPhrase.modify(noun)
-                pPhrase=str(pPhrase)
-                combination=stripSub(noun)+" "+pPhrase
+                pPhrase=combinations[pkey]
+                combination=current.adjective(pPhrase,noun)
+#                pPhrase.modify(noun)
+#                pPhrase=str(pPhrase)
+#                combination=stripSub(noun)+" "+pPhrase
                 for key in combinations:
                     if combinations[key]==noun or combinations[key]==pPhrase:
                         combinations[key]=combination

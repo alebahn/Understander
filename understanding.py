@@ -139,8 +139,6 @@ class prepositionalPhrase(object):
             subj=stripSub(subj)
             fullName=subj+" "+str(self.name)
             self._context.add(getattr(self.noun,subj),True,fullName)
-    def __str__(self):
-        return str(self.name)
 
 class entity(metaclass=kind):
     def __new__(cls,*args,**kargs):
@@ -656,26 +654,41 @@ class conversation:
             self._temp[fullName]=temp
         return fullName
     def adjective(self,adj,noun):
-        adj=stripSub(adj)
-        noun=stripSub(noun)
-        if noun.partition(' ')[0] in ('a','an','the'):
-            name=noun.partition(' ')[0]+' '+adj+' '+noun.partition(' ')[2]
+        if "." in str(adj) and str(adj).partition(".")[2]=="a":
+            adj=stripSub(adj)
+            noun=stripSub(noun)
+            if noun.partition(' ')[0] in ('a','an','the'):
+                name=noun.partition(' ')[0]+' '+adj+' '+noun.partition(' ')[2]
+            else:
+                name=adj+' '+noun
+            if noun.partition(' ')[0] in ('a','an'):
+                if name not in self._temp:
+                    item=self[noun]
+                    item.be(self[adj+'.a'])
+                    self._temp[name]=item
+            else:
+                if name not in self._entities:
+                    item=self[noun]
+                    del self[noun]
+                    item.be(self[adj+'.a'])
+                    self._entities[name]=item
         else:
-            name=adj+' '+noun
-        if noun.partition(' ')[0] in ('a','an'):
-            if name not in self._temp:
-                item=self[noun]
-                item.be(self[adj+'.a'])
-                self._temp[name]=item
-        else:
-            if name not in self._entities:
-                item=self[noun]
-                del self[noun]
-                item.be(self[adj+'.a'])
-                self._entities[name]=item
+            pPhrase=self[adj]
+            pPhrase.modify(noun)
+            name=stripSub(noun)+" "+adj
         return name
     def number(self,num1,num2):
-        pass
+        combination=str(num1)+" "+str(num2)
+        if num1 in self:
+            num1=self.entity(num1)
+        else:
+            num1=number(num1,self)
+        if num2 in self:
+            num2=self.entity(num2)
+        else:
+            num2=number(num2,self)
+        self.add(number(combination,self,num1,num2),True,combination)
+        return combination
     def prepPhrase(self,prep,obj):
         prep=stripSub(prep)
         obj=stripSub(obj)
