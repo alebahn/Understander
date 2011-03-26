@@ -1,4 +1,4 @@
-standardize name system
+keep entity objects out of understander
 clean up code and make more uniform
 make methods of same type take similar arguments
 standardize method __init__

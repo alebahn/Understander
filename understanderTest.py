@@ -556,19 +556,19 @@ class Test(unittest.TestCase):
     
     def testInheritance2(self):
         s="an admin is a user"
-        linkage=understander.parseString(s, self.debug)
+        linkage=understander.parseString(s, self.debug, self.ff)
         links,words=understander.parseLinkage(linkage)
         combinations=understander.generateCombinations(links, words,self.current)
         understander.parseDeclarative(links, words, combinations,self.current)
         
         s="I am an admin"
-        linkage=understander.parseString(s, self.debug)
+        linkage=understander.parseString(s, self.debug, self.ff)
         links,words=understander.parseLinkage(linkage)
         combinations=understander.generateCombinations(links, words,self.current)
         understander.parseDeclarative(links, words, combinations,self.current)
         
         s="am I an admin"
-        linkage=understander.parseString(s, self.debug)
+        linkage=understander.parseString(s, self.debug, self.ff)
         links,words=understander.parseLinkage(linkage)
         combinations=understander.generateCombinations(links, words,self.current)
         result=understander.parseInterogative(links, words, combinations, self.current)
@@ -773,7 +773,7 @@ class Test(unittest.TestCase):
         links,words=understander.parseLinkage(linkage)
         understander.generateCombinations(links, words,self.current)
         num=self.current[s]
-        self.assertEqual(str(num), s)
+        self.assertEqual(str(num), "four hundred twenty five")
         self.assertEqual(int(num),425)
         
         s="nineteen ninety-two"

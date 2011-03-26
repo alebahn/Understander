@@ -355,15 +355,18 @@ class number(thing):
     tens_place=dict((value,key*10+20) for (key,value) in enumerate(["twenty","thirty","forty","fifty","sixty","seventy","eighty","ninety"]))
     place_marker={"hundred":2,"thousand":3,"million":6,"billion":9,"trillion":12}
     number_words=list(ones_place.keys())+list(tens_place.keys())+list(place_marker.keys())
+    rev_ones=["zero","one","two","three","four","five","six","seven","eight","nine","ten","eleven","twelve","thirteen","fourteen","fifteen","sixteen","seventeen","eighteen","nineteen"]
+    rev_tens=dict((key+2,value) for (key,value) in enumerate(["twenty","thirty","forty","fifty","sixty","seventy","eighty","ninety"]))
+    rev_place={2:"hundred",3:"thousand",6:"million",9:"billion",12:"trillion"}
     def __init__(self,called,context,num1=None,num2=None):
-        thing.__init__(self,called,context)
         if num1==None or num2==None:
             self.value=tuple(str(called).split('-'))
         elif isinstance(num1, number) and isinstance(num2, number):
             self.value=num1.value+num2.value
         else:
             raise numberError()
-        self.getNumTuple() #TODO: check for number error
+        self.getNumTuple() #check for number error
+        thing.__init__(self,str(self),context)
     def getItems(self):
         last=None
         for num in self.value:
@@ -406,6 +409,29 @@ class number(thing):
             else:
                 sum=sum*10**(math.floor(math.log10(value))+1)+value
         return sum
+    def __str__(self):
+        num=int(self)
+        if(num==0):
+            return "zero"
+        value=[]
+        place=0
+        while(num>0):
+            if num%100<20:
+                value.append(self.rev_ones[num%100])
+                num//=100
+            else:
+                value.append(self.rev_ones[num%10])
+                num//=10
+                value.append(self.rev_tens[num%10])
+                num//=10
+            if num%10>0:
+                value.append(self.rev_place[2])
+                value.append(self.rev_ones[num%10])
+                num//=10
+            place+=3
+            if num>0:
+                value.append(self.rev_place[place])
+        return " ".join(reversed(value))
 
 class numberError(Exception):
     pass
