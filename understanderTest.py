@@ -767,6 +767,7 @@ class Test(unittest.TestCase):
         num=self.compileNumber(s)
         self.assertEqual(num.getNumTuple(),(425,))
         self.assertEqual(int(num),425)
+        self.assertEqual(str(num),"four hundred twenty five")
         
         s2="I have four hundred twenty-five cats"
         linkage=understander.parseString(s2, self.debug)
@@ -780,36 +781,43 @@ class Test(unittest.TestCase):
         num=self.compileNumber(s)
         self.assertEqual(num.getNumTuple(),(19,92))
         self.assertEqual(int(num),1992)
+        self.assertEqual(str(num),"one thousand nine hundred ninety two")
         
         s="six thousand nine hundred seventy two"
         num=self.compileNumber(s)
         self.assertEqual(num.getNumTuple(),(6972,))
         self.assertEqual(int(num),6972)
+        self.assertEqual(str(num),s)
         
         s="two hundred thousand five"
         num=self.compileNumber(s)
         self.assertEqual(num.getNumTuple(),(200005,))
         self.assertEqual(int(num),200005)
+        self.assertEqual(str(num),"twenty million five")
         
         s="thirty five hundred"
         num=self.compileNumber(s)
         self.assertEqual(num.getNumTuple(),(3500,))
         self.assertEqual(int(num),3500)
+        self.assertEqual(str(num),"three thousand five hundred")
         
         s="eight six seven five three oh nine"
         num=self.compileNumber(s)
         self.assertEqual(num.getNumTuple(),(8,6,7,5,3,0,9))
         self.assertEqual(int(num),8675309)
+        self.assertEqual(str(num),"eight million six hundred seventy five thousand three hundred nine")
         
         s="hundred"
         num=self.compileNumber(s)
         self.assertEqual(num.getNumTuple(),(100,))
         self.assertEqual(int(num),100)
+        self.assertEqual(str(num),"one hundred")
         
         s="nineteen oh one"
         num=self.compileNumber(s)
         self.assertEqual(num.getNumTuple(),(19,0,1))
         self.assertEqual(int(num),1901)
+        self.assertEqual(str(num),"one thousand nine hundred one")
         
         s="five million hundred"
         self.assertRaises(numberError, self.compileNumber, s)

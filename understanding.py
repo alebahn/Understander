@@ -417,19 +417,22 @@ class number(thing):
         place=0
         while(num>0):
             if num%100<20:
-                value.append(self.rev_ones[num%100])
+                if num%100>0:
+                    value.append(self.rev_ones[num%100])
                 num//=100
             else:
-                value.append(self.rev_ones[num%10])
+                if num%10>0:
+                    value.append(self.rev_ones[num%10])
                 num//=10
-                value.append(self.rev_tens[num%10])
+                if num%10>0:
+                    value.append(self.rev_tens[num%10])
                 num//=10
             if num%10>0:
                 value.append(self.rev_place[2])
                 value.append(self.rev_ones[num%10])
                 num//=10
             place+=3
-            if num>0:
+            if num%1000>0:
                 value.append(self.rev_place[place])
         return " ".join(reversed(value))
 
