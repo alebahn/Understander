@@ -104,7 +104,7 @@ def generateCombinations(links,words,current):
                 num=combinations[nlink]
                 okey=link[1]
                 obj=combinations[okey]
-                combination=str(num)+" "+str(obj)
+                combination=current.numDet(num,obj)
                 for key in combinations:
                     if combinations[key]==num or combinations[key]==obj:
                         combinations[key]=combination

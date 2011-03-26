@@ -65,8 +65,6 @@ def detectKind(name):   #if possible, determine the type of an object by it's na
     name=str(name)
     if all((word in number.number_words) for word in name.replace('-',' ').split(' ')):
         return number
-    elif any((word in number.number_words) for word in name.replace('-',' ').split(' ')):
-        return time
     else:
         return entity
 
@@ -117,12 +115,17 @@ class prepositionalPhrase(object):
     def __init__(self,prep,obj,context):
         self.preposition=prep
         if(self.preposition=="at"):
-            objKind=detectKind(obj)
+            if obj in context:
+                obj=context[obj]
+                objKind=type(obj)
+            else:
+                objKind=detectKind(obj)
             if objKind==number or objKind==time:
                 self.noun=time(obj,context)
+                context.add(self.noun,True,obj)
             else:
                 self.noun=location(str(obj),context)
-            context.add(self.noun,False)
+                context.add(self.noun,False,obj)
         if(self.preposition=="of"):
             self.noun=context[obj]
         self.name=name(str(prep)+' '+str(obj),context,self)
@@ -369,7 +372,7 @@ class number(thing):
             else:
                 raise numberError()
             self.getNumTuple() #check for number error
-            thing.__init__(self,str(self),context)
+            thing.__init__(self,self._toString(),context)
     def getItems(self):
         last=None
         for num in self.value:
@@ -412,9 +415,7 @@ class number(thing):
             else:
                 sum=sum*10**(math.floor(math.log10(value))+1)+value
         return sum
-    def __str__(self):
-        if(str(self.name)=="a number"):
-            return "a number"
+    def _toString(self):
         num=int(self)
         if(num==0):
             return "zero"
@@ -440,18 +441,33 @@ class number(thing):
             if num%1000>0:
                 value.append(self.rev_place[place])
         return " ".join(reversed(value))
+    def __str__(self):
+        if(str(self.name)=="a number"):
+            return "a number"
+        return self._toString()
 
 class numberError(Exception):
     pass
                 
 
 class time(thing):
-    def __init__(self,called,context):
-        thing.__init__(self,str(called),context)
+    time_words={"AM","PM","o'clock"}
+    def __init__(self,called,context,sfx=None):
         if isinstance(called,number):
             self.time=datetime.time(*called.getNumTuple())
+        elif isinstance(called,time):
+            self.time=called.time
+        else:
+            self.time=datetime.time()
+        if sfx=="PM" or sfx!="AM" and self.time.hour<=6:
+            self.time=self.time.replace(self.time.hour+12)
+        thing.__init__(self,self._toString(),context)
     def getTime(self):
         return self.time
+    def _toString(self):
+        return self.time.strftime("%I:%M %p")
+    def __str__(self):
+        return self._toString()
 
 class plural(entity):
     def __new__(cls,name,context,entities,kind=thing):
@@ -683,9 +699,7 @@ class conversation:
             self._kinds[type]=kind(type,(entity,),{})
             self.add(self._kinds[type](name,self,*args,**kargs),str(detr) in ("a","an"),name)
             return name
-    def add(self,obj,temp=True,name=None):
-        if name==None:
-            name=str(obj)
+    def add(self,obj,temp,name):
         if temp:
             if name not in self._temp:
                 self._temp[name]=obj
@@ -745,6 +759,16 @@ class conversation:
         else:
             num2=number(num2,self)
         self.add(number(combination,self,num1,num2),True,combination)
+        return combination
+    def numDet(self,num,obj):
+        obj=str(obj)
+        combination=str(num)+" "+str(obj)
+        if str(num) in self:
+            num=self.entity(num)
+        else:
+            num=number(num,self)
+        if obj in time.time_words:
+            self.add(time(num,self,obj),True,combination)
         return combination
     def prepPhrase(self,prep,obj):
         prep=stripSub(prep)

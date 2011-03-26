@@ -1,8 +1,4 @@
-keep entity objects out of understander
-clean up code and make more uniform
-make methods of same type take similar arguments
-standardize method __init__
-time is converted
+refactor unit tests
 Dates/numbers
 indefinite objects (a cat/a black cat)
 adjective classes (yellow is a color)

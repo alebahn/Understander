@@ -733,7 +733,7 @@ class Test(unittest.TestCase):
         result=understander.parseInterogative(links, words, combinations, self.current)
         self.assertEqual(str(result), "the mall")
         
-    def testTime(self):
+    def testTime1(self):
         s="I have an appointment"
         linkage=understander.parseString(s, self.debug)
         links,words=understander.parseLinkage(linkage)
@@ -751,15 +751,35 @@ class Test(unittest.TestCase):
         links,words=understander.parseLinkage(linkage)
         combinations=understander.generateCombinations(links, words,self.current)
         result=understander.parseInterogative(links, words, combinations, self.current)
-        self.assertEqual(str(result), "ten o'clock")
+        self.assertEqual(str(result), "10:00 AM")
         
         s="what is the time of my appointment"
         linkage=understander.parseString(s, self.debug)
         links,words=understander.parseLinkage(linkage)
         combinations=understander.generateCombinations(links, words,self.current)
         result=understander.parseInterogative(links, words, combinations, self.current)
-        self.assertEqual(str(result), "ten o'clock")
-    
+        self.assertEqual(str(result), "10:00 AM")
+        
+    def testTime2(self):
+        s="I have a party"
+        linkage=understander.parseString(s, self.debug)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        understander.parseDeclarative(links, words, combinations, self.current)
+        
+        s="my party is at five forty-five"
+        linkage=understander.parseString(s, self.debug)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        understander.parseDeclarative(links, words, combinations, self.current)
+        
+        s="when is my party"
+        linkage=understander.parseString(s, self.debug)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        result=understander.parseInterogative(links, words, combinations, self.current)
+        self.assertEqual(str(result), "05:45 PM")  
+          
     def testNumber(self):
         self.assertRaises(numberError,number,"five",self.current,(),())
         
@@ -917,7 +937,8 @@ class Test(unittest.TestCase):
         s="five thirty"
         num=self.compileNumber(s)
         timeEnt=time(num,self.current)
-        self.assertEqual(timeEnt.getTime(), datetime.time(5,30))
+        self.assertEqual(timeEnt.getTime(), datetime.time(17,30))
+        self.assertEqual(str(timeEnt), "05:30 PM")
         
     def testHelpingVerb(self):
         s="I do have a cake"
