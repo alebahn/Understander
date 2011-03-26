@@ -359,14 +359,17 @@ class number(thing):
     rev_tens=dict((key+2,value) for (key,value) in enumerate(["twenty","thirty","forty","fifty","sixty","seventy","eighty","ninety"]))
     rev_place={2:"hundred",3:"thousand",6:"million",9:"billion",12:"trillion"}
     def __init__(self,called,context,num1=None,num2=None):
-        if num1==None or num2==None:
-            self.value=tuple(str(called).split('-'))
-        elif isinstance(num1, number) and isinstance(num2, number):
-            self.value=num1.value+num2.value
+        if called=="a number":
+            thing.__init__(self,called,context)
         else:
-            raise numberError()
-        self.getNumTuple() #check for number error
-        thing.__init__(self,str(self),context)
+            if num1==None or num2==None:
+                self.value=tuple(str(called).split('-'))
+            elif isinstance(num1, number) and isinstance(num2, number):
+                self.value=num1.value+num2.value
+            else:
+                raise numberError()
+            self.getNumTuple() #check for number error
+            thing.__init__(self,str(self),context)
     def getItems(self):
         last=None
         for num in self.value:
@@ -410,6 +413,8 @@ class number(thing):
                 sum=sum*10**(math.floor(math.log10(value))+1)+value
         return sum
     def __str__(self):
+        if(str(self.name)=="a number"):
+            return "a number"
         num=int(self)
         if(num==0):
             return "zero"
