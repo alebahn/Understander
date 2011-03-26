@@ -778,7 +778,40 @@ class Test(unittest.TestCase):
         links,words=understander.parseLinkage(linkage)
         combinations=understander.generateCombinations(links, words,self.current)
         result=understander.parseInterogative(links, words, combinations, self.current)
-        self.assertEqual(str(result), "05:45 PM")  
+        self.assertEqual(str(result), "05:45 PM")
+        
+    def testTime3(self):
+        s="I have an event"
+        linkage=understander.parseString(s, self.debug)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        understander.parseDeclarative(links, words, combinations, self.current)
+        
+        s="my event is at seven oh nine PM"
+        linkage=understander.parseString(s, self.debug)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        understander.parseDeclarative(links, words, combinations, self.current)
+        
+        s="when is my event"
+        linkage=understander.parseString(s, self.debug)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        result=understander.parseInterogative(links, words, combinations, self.current)
+        self.assertEqual(str(result), "07:09 PM")
+        
+    def testTimeConv(self):
+        s="five thirty"
+        num=self.compileNumber(s)
+        timeEnt=time(num,self.current)
+        self.assertEqual(timeEnt.getTime(), datetime.time(17,30))
+        self.assertEqual(str(timeEnt), "05:30 PM")
+        
+        try:
+            time(s,self.current)
+            self.fail("Exception not raised")
+        except Exception as e:
+            self.assertEqual(e.args[0], "Invalid time")
           
     def testNumber(self):
         self.assertRaises(numberError,number,"five",self.current,(),())
@@ -932,13 +965,6 @@ class Test(unittest.TestCase):
         combinations=understander.generateCombinations(links, words,self.current)
         result=understander.parseInterogative(links, words, combinations, self.current)
         self.assertEqual(str(result), "Hactar")
-        
-    def testTimeConv(self):
-        s="five thirty"
-        num=self.compileNumber(s)
-        timeEnt=time(num,self.current)
-        self.assertEqual(timeEnt.getTime(), datetime.time(17,30))
-        self.assertEqual(str(timeEnt), "05:30 PM")
         
     def testHelpingVerb(self):
         s="I do have a cake"

@@ -115,17 +115,13 @@ class prepositionalPhrase(object):
     def __init__(self,prep,obj,context):
         self.preposition=prep
         if(self.preposition=="at"):
-            if obj in context:
-                obj=context[obj]
-                objKind=type(obj)
-            else:
-                objKind=detectKind(obj)
+            obj=context[obj]
+            objKind=type(obj)
             if objKind==number or objKind==time:
                 self.noun=time(obj,context)
                 context.add(self.noun,True,obj)
             else:
                 self.noun=location(str(obj),context)
-                context.add(self.noun,False,obj)
         if(self.preposition=="of"):
             self.noun=context[obj]
         self.name=name(str(prep)+' '+str(obj),context,self)
@@ -441,10 +437,6 @@ class number(thing):
             if num%1000>0:
                 value.append(self.rev_place[place])
         return " ".join(reversed(value))
-    def __str__(self):
-        if(str(self.name)=="a number"):
-            return "a number"
-        return self._toString()
 
 class numberError(Exception):
     pass
@@ -454,11 +446,14 @@ class time(thing):
     time_words={"AM","PM","o'clock"}
     def __init__(self,called,context,sfx=None):
         if isinstance(called,number):
-            self.time=datetime.time(*called.getNumTuple())
+            tup=called.getNumTuple()
+            if len(tup)>2 and tup[1]==0:
+                tup=tup[:1]+tup[2:]
+            self.time=datetime.time(*tup)
         elif isinstance(called,time):
             self.time=called.time
         else:
-            self.time=datetime.time()
+            raise Exception("Invalid time")
         if sfx=="PM" or sfx!="AM" and self.time.hour<=6:
             self.time=self.time.replace(self.time.hour+12)
         thing.__init__(self,self._toString(),context)
@@ -466,8 +461,6 @@ class time(thing):
         return self.time
     def _toString(self):
         return self.time.strftime("%I:%M %p")
-    def __str__(self):
-        return self._toString()
 
 class plural(entity):
     def __new__(cls,name,context,entities,kind=thing):
@@ -749,7 +742,9 @@ class conversation:
             name=stripSub(noun)+" "+adj
         return name
     def number(self,num1,num2):
-        combination=str(num1)+" "+str(num2)
+        num1=stripSub(num1)
+        num2=stripSub(num2)
+        combination=num1+" "+num2
         if num1 in self:
             num1=self.entity(num1)
         else:
@@ -761,7 +756,7 @@ class conversation:
         self.add(number(combination,self,num1,num2),True,combination)
         return combination
     def numDet(self,num,obj):
-        obj=str(obj)
+        obj=stripSub(obj)
         combination=str(num)+" "+str(obj)
         if str(num) in self:
             num=self.entity(num)
