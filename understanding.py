@@ -182,9 +182,10 @@ class entity(metaclass=kind):
                     DO.possessor.possessions.remove(DO)
                     delattr(DO.possessor,type(DO).__name__)
                 DO.possessor=self
-                if DO.name.partition(' ')[0] in ('a','an'):
-                    del(self._context[DO.name])
-                    DO.name=name(DO.name.partition(' ')[2],self._context,self)
+#                if DO.name.partition(' ')[0] in ('a','an'):
+#                    for handle in self._context.names(DO):
+#                        del(self._context[handle])
+#                    DO.name=name(DO.name.partition(' ')[2],self._context,self)
         elif adv=="not":
             if DO.name.partition(' ')[0] in ('a','an'):
                 if any(isinstance(item,type(DO)) for item in self.possessions):
@@ -225,7 +226,7 @@ class entity(metaclass=kind):
                 self.properties.add(DO)
             elif isinstance(DO,prepositionalPhrase):
                 DO.modify(self)
-            elif DO.name.partition(' ')[0] in ('a','an'):   #TODO: modify owner's list?
+            elif DO.name.partition(' ')[0] in ('a','an') and not DO.possessor:   #TODO: modify owner's list?
                 if issubclass(type(self),type(DO)):
                     print("Of course it is!",file=self._context.outFile)
                 elif self.name.partition(' ')[0] in ('a','an') and issubclass(type(DO),type(self).__base__):
@@ -249,8 +250,9 @@ class entity(metaclass=kind):
                     self.possessions.add(item)      #TODO: what if both have the same generic object?
                 for item in DO.properties:
                     self.properties.add(item)    #TODO: more complexity needed when opposites added
-                if str(DO.name) in self._context._entities:
-                    self._context._entities[str(DO.name)]=self
+                #if str(DO.name) in self._context._entities:
+                for name in self._context.names(DO):
+                    self._context._entities[name]=self
                 if DO.possessor:
                     setattr(DO.possessor,type(DO).__name__,self)    #do all supertypes
                 #check class compatibility and remove from class instance lists
@@ -298,11 +300,12 @@ class name(entity):
     def partition(self,sep):
         return self.string.partition(sep)
     def _be_set(self,DO=None,adv=None):
-        if adv==None:   #TODO: make owner same as new name possessor?
+        if adv==None:
             if isinstance(DO,adjective):
                 self.properties.append(DO)
             else:
                 self.string=str(DO.name)
+                self.possessor.be(DO)
         elif adv=="not":
             print("What is it then?",file=self._context.outFile)
     def _be_ask(self,DO=None):
@@ -543,7 +546,7 @@ class question(pronoun):
     def __getattribute__(self,name):
         return object.__getattribute__(self,name)
     def _have_ask(self,DO):         #TODO: implement more accurate answer
-        if DO.name.partition(' ')[0] in ('a','an'):
+        if DO.name.partition(' ')[0] in ('a','an') and not DO.possessor:
             alls=type(DO).all(self._context)
             result=alls.possessors
             result.declinate(1)
@@ -571,20 +574,26 @@ class conversation:
         self._names={}
         for key,value in self._entities.items():
             if value in self._names:
-                self._names[value].append(key)
+                self._names[value].add(key)
             else:
-                self._names[value]=[key]
+                self._names[value]={key}
     def getAntecedent(self,pronoun):
         return self._antecedents[pronoun]
     def __getitem__(self,index):
         return self.entity(index)
     def __delitem__(self,index):
         if index in self._entities:
-            del(self._names[self._entities[index]])
+            self._names[self._entities[index]].remove(index)
             del(self._entities[index])
         elif stripSub(index) in self._entities:
-            del(self._names[self._entities[stripSub(index)]])
+            self._names[self._entities[index]].remove(stripSub(index))
             del(self._entities[stripSub(index)])
+        if index in self._temp:
+            self._names[self._temp[index]].remove(index)
+            del(self._temp[index])
+        elif stripSub(index) in self._temp:
+            self._names[self._temp[index]].remove(stripSub(index))
+            del(self._temp[stripSub(index)])
         else:
             raise KeyError(index)
     def __contains__(self,index):
@@ -595,7 +604,7 @@ class conversation:
             result=self._entities[name]
         elif name in self._temp:
             result=self._temp[name]
-            del self._temp[name]
+            del self[name]
         elif name in reversePronouns.keys():
             return createPronoun(name,self)
         elif stripSub(name) in self._entities:
@@ -603,7 +612,7 @@ class conversation:
         elif len(name.partition('.'))==3 and name.partition('.')[2]=='a':
             result=adjective(stripSub(name),self)
         elif name.capitalize()==name:
-            self._entities[name]=person(stripSub(name),self)
+            self.add(person(stripSub(name),self), False, name)
             result=self._entities[name]
         else:
             raise KeyError(name)
@@ -634,11 +643,11 @@ class conversation:
         type=stripSub(type)
         name=str(detr)+' '+type
         if type in self._kinds:
-            self.add(self._kinds[type](name,self,*args,**kargs),detr in ("a","an"))
+            self.add(self._kinds[type](name,self,*args,**kargs),str(detr) in ("a","an"),name)
             return name
         else:
             self._kinds[type]=kind(type,(entity,),{})
-            self.add(self._kinds[type](name,self,*args,**kargs),detr in ("a","an"))
+            self.add(self._kinds[type](name,self,*args,**kargs),str(detr) in ("a","an"),name)
             return name
     def add(self,obj,temp=True,name=None):
         if name==None:
@@ -649,10 +658,10 @@ class conversation:
         else:
             if name not in self._entities:
                 self._entities[name]=obj
-            if obj in self._names:
-                self._names[obj].append(name)
-            else:
-                self._names[obj]=[name]
+        if obj in self._names:
+            self._names[obj].add(name)
+        else:
+            self._names[obj]={name}
     def possession(self,owner,name):
         owner=str(owner)
         name=stripSub(name)

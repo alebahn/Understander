@@ -120,7 +120,7 @@ class Test(unittest.TestCase):
         combinations=understander.generateCombinations(links, words,self.current)
         understander.parseDeclarative(links, words, combinations,self.current)
         
-        self.assertEqual(str(self.current["me"].ball),"ball")
+        self.assertEqual(str(self.current["me"].ball),"a ball")
         self.assertEqual(self.current["me"].ball.possessor,self.current["me"].antecedent)
         
         s="do I have a ball"
@@ -162,7 +162,7 @@ class Test(unittest.TestCase):
         links,words=understander.parseLinkage(linkage)
         combinations=understander.generateCombinations(links, words,self.current)
         result=understander.parseInterogative(links, words, combinations, self.current)
-        self.assertEqual(str(result), "ball")
+        self.assertEqual(str(result), "a ball")
         
         s="I have a cat"
         linkage=understander.parseString(s, self.debug)
@@ -175,7 +175,7 @@ class Test(unittest.TestCase):
         links,words=understander.parseLinkage(linkage)
         combinations=understander.generateCombinations(links, words,self.current)
         result=understander.parseInterogative(links, words, combinations, self.current)
-        self.assertIn(str(result), ("ball and cat","cat and ball"))
+        self.assertIn(str(result), ("a ball and a cat","a cat and a ball"))
         
         s="I have a bat"
         linkage=understander.parseString(s, self.debug)
@@ -188,9 +188,9 @@ class Test(unittest.TestCase):
         links,words=understander.parseLinkage(linkage)
         combinations=understander.generateCombinations(links, words,self.current)
         result=understander.parseInterogative(links, words, combinations, self.current)
-        self.assertIn(str(result), ("ball, cat, and bat","cat, ball, and bat",
-                                    "bat, cat, and ball","bat, ball, and cat",
-                                    "ball, bat, and cat","cat, bat, and ball"))
+        self.assertIn(str(result), ("a ball, a cat, and a bat","a cat, a ball, and a bat",
+                                    "a bat, a cat, and a ball","a bat, a ball, and a cat",
+                                    "a ball, a bat, and a cat","a cat, a bat, and a ball"))
         
     def testImperative(self):
         s="have a ball"
@@ -545,7 +545,7 @@ class Test(unittest.TestCase):
         links,words=understander.parseLinkage(linkage)
         combinations=understander.generateCombinations(links, words,self.current)
         result=understander.parseInterogative(links, words, combinations, self.current)
-        self.assertEqual(str(result), "cat")
+        self.assertEqual(str(result), "a cat")
         
         s="do I have an entity"
         linkage=understander.parseString(s, self.debug)
@@ -586,7 +586,7 @@ class Test(unittest.TestCase):
         links,words=understander.parseLinkage(linkage)
         combinations=understander.generateCombinations(links, words,self.current)
         result=understander.parseInterogative(links, words, combinations, self.current)
-        self.assertEqual(str(result), "cat")
+        self.assertEqual(str(result), "a cat")
         
         s="its name is Daisy"
         linkage=understander.parseString(s, self.debug)
@@ -871,6 +871,13 @@ class Test(unittest.TestCase):
         combinations=understander.generateCombinations(links, words,self.current)
         understander.parseDeclarative(links, words, combinations, self.current)
         
+        s="is Bob a user"
+        linkage=understander.parseString(s, self.debug)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        result=understander.parseInterogative(links, words, combinations, self.current)
+        self.assertEqual(str(result), "yes")
+        
         s="who is Bob"
         linkage=understander.parseString(s, self.debug)
         links,words=understander.parseLinkage(linkage)
@@ -940,7 +947,7 @@ class Test(unittest.TestCase):
         links,words=understander.parseLinkage(linkage)
         combinations=understander.generateCombinations(links, words,self.current)
         result=understander.parseInterogative(links, words, combinations, self.current)
-        self.assertEqual(str(result), "ski jacket")
+        self.assertEqual(str(result), "a ski jacket")
     
     def testConjuate(self):
         verb=conjugate("be","I")
