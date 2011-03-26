@@ -568,14 +568,22 @@ class conversation:
         self._entities={computerName:computer(computerName,self,True),userName:user(userName,self,True),"Vibranium":thing("Vibranium",self)}
         self._temp={}   #stores 'a/an' objects, possessives, prepositional phrases, and numbers
         self._antecedents={"I":self._entities[userName],"you":self._entities[computerName]}
+        self._names={}
+        for key,value in self._entities.items():
+            if value in self._names:
+                self._names[value].append(key)
+            else:
+                self._names[value]=[key]
     def getAntecedent(self,pronoun):
         return self._antecedents[pronoun]
     def __getitem__(self,index):
         return self.entity(index)
     def __delitem__(self,index):
         if index in self._entities:
+            del(self._names[self._entities[index]])
             del(self._entities[index])
         elif stripSub(index) in self._entities:
+            del(self._names[self._entities[stripSub(index)]])
             del(self._entities[stripSub(index)])
         else:
             raise KeyError(index)
@@ -608,6 +616,8 @@ class conversation:
         else:
             self._antecedents["it"]=result
         return result
+    def names(self,entity):
+        return self._names[entity]
     def verb(self,subject,name):
         if isinstance(subject,Word):
             subject=str(subject)
@@ -639,6 +649,10 @@ class conversation:
         else:
             if name not in self._entities:
                 self._entities[name]=obj
+            if obj in self._names:
+                self._names[obj].append(name)
+            else:
+                self._names[obj]=[name]
     def possession(self,owner,name):
         owner=str(owner)
         name=stripSub(name)
@@ -651,7 +665,7 @@ class conversation:
                     temp=plural(fullName,self,temp)
                 else:
                     raise Exception("You made an invalid attempt to access non wrapped object of type "+str(type(temp).__name__)+".")
-            self._temp[fullName]=temp
+            self.add(temp,True,fullName)
         return fullName
     def adjective(self,adj,noun):
         if "." in str(adj) and str(adj).partition(".")[2]=="a":
@@ -665,13 +679,13 @@ class conversation:
                 if name not in self._temp:
                     item=self[noun]
                     item.be(self[adj+'.a'])
-                    self._temp[name]=item
+                    self.add(item,True,name)
             else:
                 if name not in self._entities:
                     item=self[noun]
                     del self[noun]
                     item.be(self[adj+'.a'])
-                    self._entities[name]=item
+                    self.add(item,True,name)
         else:
             pPhrase=self[adj]
             pPhrase.modify(noun)
@@ -695,7 +709,7 @@ class conversation:
         name=prep+' '+obj
         prepPhrase=prepositionalPhrase(prep,obj,self)
         if name not in self._temp:
-            self._temp[name]=prepPhrase
+            self.add(prepPhrase,True,name)
         else:
             raise Exception('second "' + name + '" not handled')
         return name
