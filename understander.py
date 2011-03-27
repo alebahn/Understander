@@ -21,13 +21,14 @@ def findProblems(linkage,sent,outFile):     #TODO: replace [~] words and return 
             print("I do not recognize '"+sent[i]+"'.",file=outFile)
     
 
-def parseString(s,debug,outFile=sys.stdout):
+def parseString(s,debug,linkNum=0,file=sys.stdout):
     sent = Sentence(s)
-    if sent.parse():
-        linkage = Linkage(0,sent)
+    num_links=sent.parse()
+    if num_links>linkNum:
+        linkage = Linkage(linkNum,sent)
         if debug:
-            linkage.print_diagram()
-        findProblems(linkage, sent, outFile)
+            linkage.print_diagram(file)
+        findProblems(linkage, sent, file)
         return linkage
     else:
         return None
@@ -56,11 +57,11 @@ def parseLinkage(linkage):
     del link
     return links,words
 
-def printLinks(links):
+def printLinks(links,file=sys.stdout):
     for key,keyGroup in links.items():
         for subkey,subkeyGroup in keyGroup.items():
             for link in subkeyGroup:
-                print((key,subkey)+link)
+                print((key,subkey)+link,file=file)
 
 def generateCombinations(links,words,current):
     combinations=dict((key,key) for key in words)
@@ -284,6 +285,58 @@ def parseDeclarative(links,words,combinations,current):
         directObject=infinitive(current,inf,current[directObject])
     current.verb(subject,verb)(directObject,adv=adv)
 
+def parseThrough(s,debug,current,file=sys.stdout):
+    itter=0
+    linkage=parseString(s, debug, file=file)
+    while linkage:
+        links,words=parseLinkage(linkage)
+        try:
+            if debug:
+                printLinks(links,file=file)
+            combinations=generateCombinations(links, words,current)
+            sentenceType=clasifySentence(links)
+            if sentenceType=="interrogative":
+                response=parseInterogative(links, words, combinations,current)
+                print(response,file=file)
+                #talker.say(response)
+            elif sentenceType=="imperative":
+                response=parseImperative(links, words, combinations,current)
+                print(response,file=file)
+                #talker.say(response)
+            elif sentenceType=="declarative":
+                parseDeclarative(links, words, combinations,current)
+        except KeyError as value:   #conjugate 'be' for argument
+            linkage=parseString(s, debug, itter+1, file)
+            if not linkage:
+                response="What is "+stripSub(value.args[0])+"?"
+                print(response)
+                #talker.say(response)
+                if debug:
+                    raise
+            else:
+                itter+=1;
+        except AttributeError as value:
+            linkage=parseString(s, debug, itter+1, file)
+            if not linkage:
+                print(str(value.args[0]))
+                #talker.say(str(value.args[0]))
+                if debug:
+                    raise
+            else:
+                itter+=1
+        except Exception as value:
+            linkage=parseString(s, debug, itter+1, file)
+            if not linkage:
+                print(str(value.args[0]))
+                if debug:
+                    raise
+            else:
+                itter+=1
+        else:
+            itter+=1
+            break
+    return itter != 0
+
 if __name__ == "__main__":
     debug=False  #turn on/off debugging output
     parser=lp() #initialize the parser
@@ -293,48 +346,16 @@ if __name__ == "__main__":
     while True:
         s=input(">> ")
         words=s.split(' ')
-        linkage=parseString(s, debug)
-        if linkage:
-            links,words=parseLinkage(linkage)
-            try:
-                if debug:
-                    printLinks(links)
-                combinations=generateCombinations(links, words,current)
-                sentenceType=clasifySentence(links)
-                if sentenceType=="interrogative":
-                    response=parseInterogative(links, words, combinations,current)
-                    print(response)
-                    #talker.say(response)
-                elif sentenceType=="imperative":
-                    response=parseImperative(links, words, combinations,current)
-                    print(response)
-                    #talker.say(response)
-                elif sentenceType=="declarative":
-                    parseDeclarative(links, words, combinations,current)
-            except KeyError as value:   #conjugate 'be' for argument
-                response="What is "+stripSub(value.args[0])+"?"
-                print(response)
-                #talker.say(response)
-                if debug:
-                    raise
-            except AttributeError as value:
-                print(str(value.args[0]))
-                #talker.say(str(value.args[0]))
-                if debug:
-                    raise
-            except Exception as value:
-                print(str(value.args[0]))
-                if debug:
-                    raise
-        #hereafter are grammatically incorrect commands
-        elif 'run' in words:
-            print(words)
-        elif 'exit' in words:
-            print(words)
-        elif 'debug' in words:
-            debug=not debug
-            print("debug "+("on" if debug else "off")+".")
-        else:
-            print("My responses are limited. Please use precise English")
+        if not parseThrough(s, debug, current):
+            #hereafter are grammatically incorrect commands
+            if 'run' in words:
+                print(words)
+            elif 'exit' in words:
+                print(words)
+            elif 'debug' in words:
+                debug=not debug
+                print("debug "+("on" if debug else "off")+".")
+            else:
+                print("My responses are limited. Please use precise English")
     # For now explicitly delete the linkage
     del linkage

@@ -4,6 +4,7 @@ Created on Mar 16, 2011
 @author: aaron
 '''
 from linkgrammar import lp
+from understander import parseThrough
 from understanding import conversation, number, numberError, time, conjugate, \
     adverb, plural, entity
 import datetime
@@ -32,18 +33,28 @@ class Test(unittest.TestCase):
     def tearDown(self):
         pass
     
+    def testParseThrough(self):
+        s="I am happy"
+        parseThrough(s,True,self.current,self.ff)
+        
+        s="have a cake"
+        parseThrough(s,True,self.current,self.ff)
+        
+        s="who are you"
+        parseThrough(s,True,self.current,self.ff)
+    
     def testBadSentences(self):
         s="I be of are cool"
         linkage=understander.parseString(s, self.debug)
         self.assertIsNone(linkage)
         
         s="I haeve a cat"
-        linkage=understander.parseString(s, self.debug, self.ff)
+        linkage=understander.parseString(s, self.debug, file=self.ff)
         self.assertIsNotNone(linkage)
         self.assertEqual(self.ff.getLast(1), "I do not recognize 'haeve'.")
         
         s="I have several caers"
-        linkage=understander.parseString(s, self.debug, self.ff)
+        linkage=understander.parseString(s, self.debug, file=self.ff)
         self.assertIsNotNone(linkage)
         self.assertEqual(self.ff.getLast(1), "I do not recognize 'caers'.")
         
@@ -66,7 +77,7 @@ class Test(unittest.TestCase):
             self.assertEqual(e.args[0], "I can not screw.")
         
         s="what is my decl"
-        linkage=understander.parseString(s, self.debug, self.ff)
+        linkage=understander.parseString(s, self.debug, file=self.ff)
         self.assertIsNotNone(linkage)
         self.assertEqual(self.ff.getLast(1), "I do not recognize 'decl'.")
         links,words=understander.parseLinkage(linkage)
@@ -556,19 +567,19 @@ class Test(unittest.TestCase):
     
     def testInheritance2(self):
         s="an admin is a user"
-        linkage=understander.parseString(s, self.debug, self.ff)
+        linkage=understander.parseString(s, self.debug, file=self.ff)
         links,words=understander.parseLinkage(linkage)
         combinations=understander.generateCombinations(links, words,self.current)
         understander.parseDeclarative(links, words, combinations,self.current)
         
         s="I am an admin"
-        linkage=understander.parseString(s, self.debug, self.ff)
+        linkage=understander.parseString(s, self.debug, file=self.ff)
         links,words=understander.parseLinkage(linkage)
         combinations=understander.generateCombinations(links, words,self.current)
         understander.parseDeclarative(links, words, combinations,self.current)
         
         s="am I an admin"
-        linkage=understander.parseString(s, self.debug, self.ff)
+        linkage=understander.parseString(s, self.debug, file=self.ff)
         links,words=understander.parseLinkage(linkage)
         combinations=understander.generateCombinations(links, words,self.current)
         result=understander.parseInterogative(links, words, combinations, self.current)
@@ -1079,7 +1090,15 @@ class Test(unittest.TestCase):
         self.assertEqual(verb, "does")
             
     
-#    def testColor(self):
+    def testColor1(self):
+        s="I am yellow"
+        parseThrough(s, self.debug, self.current, self.ff)
+        
+        s="am I yellow"
+        parseThrough(s, self.debug, self.current, self.ff)
+        self.assertEqual(self.ff.getLast(1), "yes")
+    
+#    def testColor2(self):
 #        s="I have a yellow dog"
 #        linkage=understander.parseString(s, self.debug)
 #        self.assertIsNotNone(linkage)
