@@ -1,5 +1,6 @@
 import locale
 import clinkgrammar as clg
+import sys
 import atexit
 
 class lp(object):
@@ -252,8 +253,8 @@ class Linkage(object):
 	def get_link_rword(self,index):
 		return clg.linkage_get_link_rword(self._link,index)
 	
-	def print_diagram(self):
-		print(clg.linkage_print_diagram(self._link))
+	def print_diagram(self,file=sys.stdout):
+		print(clg.linkage_print_diagram(self._link),file=file)
 	
 	@property
 	def diagram(self):
