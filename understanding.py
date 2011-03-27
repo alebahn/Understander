@@ -65,6 +65,8 @@ def detectKind(name):   #if possible, determine the type of an object by it's na
     name=str(name)
     if all((word in number.number_words) for word in name.replace('-',' ').split(' ')):
         return number
+    if ":" in name:
+        return time
     else:
         return entity
 
@@ -115,8 +117,11 @@ class prepositionalPhrase(object):
     def __init__(self,prep,obj,context):
         self.preposition=prep
         if(self.preposition=="at"):
-            obj=context[obj]
-            objKind=type(obj)
+            if obj in context:
+                obj=context[obj]
+                objKind=type(obj)
+            else:
+                objKind=detectKind(obj)
             if objKind==number or objKind==time:
                 self.noun=time(obj,context)
                 context.add(self.noun,True,obj)
@@ -361,17 +366,21 @@ class number(thing):
         if called=="a number":
             thing.__init__(self,called,context)
         else:
-            if num1==None or num2==None:
-                self.value=tuple(str(called).split('-'))
-            elif isinstance(num1, number) and isinstance(num2, number):
-                self.value=num1.value+num2.value
+            if str(called).isdecimal():
+                self.value=(int(str(called)),)
+                self.words=self._genWords()
             else:
-                raise numberError()
-            self.getNumTuple() #check for number error
+                if num1==None or num2==None:
+                    self.words=tuple(str(called).split('-'))
+                elif isinstance(num1, number) and isinstance(num2, number):
+                    self.words=num1.words+num2.words
+                else:
+                    raise numberError()
+                self.value=tuple(self.getItems())
             thing.__init__(self,self._toString(),context)
     def getItems(self):
         last=None
-        for num in self.value:
+        for num in self.words:
             if num in self.ones_place:
                 if last==None:
                     last=self.ones_place[num]
@@ -395,48 +404,54 @@ class number(thing):
                 if last==None:
                     last=10**self.place_marker[num]
                 elif last%(10**self.place_marker[num])==0:
-                    raise numberError()
+                    if(num=="hundred" and last==0):
+                        yield last
+                        last=0
+                    else:
+                        raise numberError()
                 else:
                     less=last%(10**self.place_marker[num])
                     greater=last-less
                     last=greater+less*10**self.place_marker[num]
         yield last
     def getNumTuple(self):
-        return tuple(self.getItems())
+        return self.value
     def __int__(self):
         sum=0
-        for value in self.getItems():
+        for value in self.value:
             if value==0:
                 sum*=10
             else:
                 sum=sum*10**(math.floor(math.log10(value))+1)+value
         return sum
-    def _toString(self):
+    def _genWordsReversed(self):
         num=int(self)
         if(num==0):
-            return "zero"
-        value=[]
+            yield "zero"
         place=0
         while(num>0):
             if num%100<20:
                 if num%100>0:
-                    value.append(self.rev_ones[num%100])
+                    yield self.rev_ones[num%100]
                 num//=100
             else:
                 if num%10>0:
-                    value.append(self.rev_ones[num%10])
+                    yield self.rev_ones[num%10]
                 num//=10
                 if num%10>0:
-                    value.append(self.rev_tens[num%10])
+                    yield self.rev_tens[num%10]
                 num//=10
             if num%10>0:
-                value.append(self.rev_place[2])
-                value.append(self.rev_ones[num%10])
+                yield self.rev_place[2]
+                yield self.rev_ones[num%10]
                 num//=10
             place+=3
             if num%1000>0:
-                value.append(self.rev_place[place])
-        return " ".join(reversed(value))
+                yield self.rev_place[place]
+    def _genWords(self):
+        return reversed(tuple(self._genWordsReversed()))
+    def _toString(self):
+        return " ".join(self._genWords())
 
 class numberError(Exception):
     pass
@@ -445,16 +460,22 @@ class numberError(Exception):
 class time(thing):
     time_words={"AM","PM","o'clock"}
     def __init__(self,called,context,sfx=None):
+        if isinstance(called,Word):
+            called=str(called)
         if isinstance(called,number):
             tup=called.getNumTuple()
             if len(tup)>2 and tup[1]==0:
                 tup=tup[:1]+tup[2:]
+            if len(tup)==1 and tup[0]>100:
+                tup=(tup[0]//100,tup[0]%100)
             self.time=datetime.time(*tup)
         elif isinstance(called,time):
             self.time=called.time
+        elif isinstance(called,str):
+            self.time=datetime.datetime.strptime(called,"%H:%M").time()
         else:
             raise Exception("Invalid time")
-        if sfx=="PM" or sfx!="AM" and self.time.hour<=6:
+        if sfx=="PM":
             self.time=self.time.replace(self.time.hour+12)
         thing.__init__(self,self._toString(),context)
     def getTime(self):
@@ -761,7 +782,10 @@ class conversation:
         if str(num) in self:
             num=self.entity(num)
         else:
-            num=number(num,self)
+            if ":" in str(num):
+                num=time(num,self)
+            else:
+                num=number(num,self)
         if obj in time.time_words:
             self.add(time(num,self,obj),True,combination)
         return combination
