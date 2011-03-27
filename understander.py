@@ -333,6 +333,7 @@ if __name__ == "__main__":
             print(words)
         elif 'debug' in words:
             debug=not debug
+            print("debug "+("on" if debug else "off")+".")
         else:
             print("My responses are limited. Please use precise English")
     # For now explicitly delete the linkage
