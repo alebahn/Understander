@@ -341,11 +341,7 @@ class adjective(entity):
                 type(DO).__bases__=(adjective,)
             self=type(DO)(str(self.name),self._context)
             self._context._adjectives[str(self.name)+".a"]=self
-        elif adv=="not":
-            raise Exception("What is it then?")
-    def _be_get(self,DO):
-        return interjection(issubclass(type(DO), adjective));
-    be=verb(_be_set, asker=_be_get)
+    be=verb(_be_set)
     def __hash__(self):
         return hash(str(self.name))
 
