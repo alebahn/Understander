@@ -37,6 +37,7 @@ for pronoun in ("another", "each", "either", "enough", "everything", "less", "li
 for pronoun in("anybody", "anyone", "anything", "everybody", "everyone", "no one", "nobody", "one", "somebody", "someone"):
     pronouns[pronoun]=(pronoun,)*2+(pronoun+"'s",)*2
 reversePronouns=dict((value,key) for key in pronouns.keys() for value in set(pronouns[key]) if value is not None)
+questionPronouns=("who","what","where","when")
 
 def createPronoun(name,context):
     assert(name in reversePronouns.keys())
@@ -46,7 +47,7 @@ def createPronoun(name,context):
         return personal(baseName,context,index)
     elif baseName in ("that","this","those","these"):
         pass
-    elif baseName in ("who","what","where","when"):
+    elif baseName in questionPronouns:
         return question(baseName,context,index)
 
 def stripSub(name): #convert a name to a string and remove the subscript if present
@@ -65,8 +66,10 @@ def detectKind(name):   #if possible, determine the type of an object by it's na
     name=str(name)
     if all((word in number.number_words) for word in name.replace('-',' ').split(' ')):
         return number
-    if ":" in name:
+    elif ":" in name:
         return time
+    elif name in questionPronouns:
+        return question
     else:
         return entity
 
@@ -227,7 +230,10 @@ class entity(metaclass=kind):
     def _be_set(self,DO=None,adv=None):
         if adv==None:
             if isinstance(DO,adjective):
+                if type(DO).__name__ in self.__dict__:
+                    self.properties.remove(getattr(self, type(DO).__name__))
                 self.properties.add(DO)
+                setattr(self, type(DO).__name__, DO)
             elif isinstance(DO,prepositionalPhrase):
                 DO.modify(self)
             elif DO.name.partition(' ')[0] in ('a','an') and not DO.possessor:   #TODO: modify owner's list?
@@ -329,6 +335,17 @@ class adjective(entity):
             return self.name==other
         else:
             return False
+    def _be_set(self,DO,adv=None):
+        if adv==None:
+            if not issubclass(type(DO), adjective):
+                type(DO).__bases__=(adjective,)
+            self=type(DO)(str(self.name),self._context)
+            self._context._adjectives[str(self.name)+".a"]=self
+        elif adv=="not":
+            raise Exception("What is it then?")
+    def _be_get(self,DO):
+        return interjection(issubclass(type(DO), adjective));
+    be=verb(_be_set, asker=_be_get)
     def __hash__(self):
         return hash(str(self.name))
 
@@ -596,15 +613,16 @@ class personal(pronoun):
         pronoun.__init__(self,name,context,decl,match,singular)
 
 class question(pronoun):
-    def __init__(self,name,context,decl):
-        if name=="who":
-            match=person
-        elif name=="what":
-            match=thing
-        elif name=="where":
-            match=place
-        elif name=="when":
-            match=time
+    def __init__(self,name,context,decl,match=None):
+        if match==None:
+            if name=="who":
+                match=person
+            elif name=="what":
+                match=thing
+            elif name=="where":
+                match=place
+            elif name=="when":
+                match=time
         pronoun.__init__(self,name,context,decl,match,True)
         self.antecedent=None
     def __getattribute__(self,name):
@@ -619,8 +637,11 @@ class question(pronoun):
         return DO.possessors
     have=verb(asker=_have_ask)
     def _be_ask(self,DO):
-        DO.declinate(1)
-        return DO
+        if issubclass(self.kind,adjective):
+            return getattr(DO, self.kind.__name__)
+        else:
+            DO.declinate(1)
+            return DO
     be=verb(asker=_be_ask)
 
 class conversation:
@@ -636,6 +657,7 @@ class conversation:
         self._temp={}   #stores 'a/an' objects, possessives, prepositional phrases, and numbers
         self._antecedents={"I":self._entities[userName],"you":self._entities[computerName]}
         self._names={}
+        self._adjectives={}
         for key,value in self._entities.items():
             if value in self._names:
                 self._names[value].add(key)
@@ -673,8 +695,11 @@ class conversation:
             return createPronoun(name,self)
         elif stripSub(name) in self._entities:
             result=self._entities[stripSub(name)]
+        elif name in self._adjectives:
+            result=self._adjectives[name]
         elif len(name.partition('.'))==3 and name.partition('.')[2]=='a':
             result=adjective(stripSub(name),self)
+            self._adjectives[name]=result
         elif name.capitalize()==name:
             self.add(person(stripSub(name),self), False, name)
             result=self._entities[name]
@@ -738,6 +763,15 @@ class conversation:
                     raise Exception("You made an invalid attempt to access non wrapped object of type "+str(type(temp).__name__)+".")
             self.add(temp,True,fullName)
         return fullName
+    def question(self,quest,match):
+        quest=str(quest)
+        match=stripSub(match)
+        combination=quest+" "+match
+        baseName=reversePronouns[quest]
+        index=pronouns[baseName].index(quest)
+        quest=question(baseName,self,index,self._kinds[match])
+        self.add(quest,True,combination)
+        return combination
     def adjective(self,adj,noun):
         if "." in str(adj) and str(adj).partition(".")[2]=="a":
             adj=stripSub(adj)

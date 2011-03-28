@@ -94,6 +94,12 @@ class Test(unittest.TestCase):
         classification=understander.clasifySentence(links)
         self.assertEqual(classification, "declarative")
         
+        s="yellow is a color"
+        linkage=understander.parseString(s, self.debug, 1)
+        links=understander.parseLinkage(linkage)[0]
+        classification=understander.clasifySentence(links)
+        self.assertEqual(classification, "declarative")
+        
         s="eat cake"
         linkage=understander.parseString(s, self.debug)
         links=understander.parseLinkage(linkage)[0]
@@ -691,6 +697,33 @@ class Test(unittest.TestCase):
         result=understander.parseInterogative(links, words, combinations, self.current)
         self.assertEqual(str(result), "yes")
     
+    def testAdjective3(self):
+        s="I am happy"
+        linkage=understander.parseString(s, self.debug)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        understander.parseDeclarative(links, words, combinations, self.current)
+        
+        s="am I happy"
+        linkage=understander.parseString(s, self.debug)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        result=understander.parseInterogative(links, words, combinations, self.current)
+        self.assertEqual(str(result), "yes")
+        
+        s="I am sad"
+        linkage=understander.parseString(s, self.debug)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        understander.parseDeclarative(links, words, combinations, self.current)
+        
+        s="am I happy"
+        linkage=understander.parseString(s, self.debug)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        result=understander.parseInterogative(links, words, combinations, self.current)
+        self.assertEqual(str(result), "no")
+    
     def testAdverbEquality(self):
         adv1=adverb("angrily",self.current)
         adv2=adverb("angrily",self.current)
@@ -1092,27 +1125,48 @@ class Test(unittest.TestCase):
     
     def testColor1(self):
         s="I am yellow"
-        parseThrough(s, self.debug, self.current, self.ff)
+        linkage=understander.parseString(s, self.debug, 1)
+        self.assertIsNotNone(linkage)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        understander.parseDeclarative(links, words, combinations, self.current)
         
         s="am I yellow"
-        parseThrough(s, self.debug, self.current, self.ff)
-        self.assertEqual(self.ff.getLast(1), "yes")
+        linkage=understander.parseString(s, self.debug, 1)
+        self.assertIsNotNone(linkage)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        result=understander.parseInterogative(links, words, combinations, self.current)
+        self.assertEqual(str(result), "yes")
     
-#    def testColor2(self):
-#        s="I have a yellow dog"
-#        linkage=understander.parseString(s, self.debug)
-#        self.assertIsNotNone(linkage)
-#        links,words=understander.parseLinkage(linkage)
-#        combinations=understander.generateCombinations(links, words,self.current)
-#        understander.parseDeclarative(links, words, combinations, self.current)
-#        
-#        s="what color is my dog"
-#        linkage=understander.parseString(s, self.debug)
-#        self.assertIsNotNone(linkage)
-#        links,words=understander.parseLinkage(linkage)
-#        combinations=understander.generateCombinations(links, words,self.current)
-#        result=understander.parseInterogative(links, words, combinations, self.current)
-#        self.assertEqual(str(result), "yellow")
+    def testColor2(self):
+        s="yellow is a color"
+        linkage=understander.parseString(s, self.debug,1)
+        self.assertIsNotNone(linkage)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        understander.parseDeclarative(links, words, combinations, self.current)
+        
+        s="I have a yellow dog"
+        linkage=understander.parseString(s, self.debug)
+        self.assertIsNotNone(linkage)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        understander.parseDeclarative(links, words, combinations, self.current)
+        
+        s="is my dog yellow"
+        linkage=understander.parseString(s, self.debug)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        result=understander.parseInterogative(links, words, combinations, self.current)
+        self.assertEqual(str(result), "yes")
+        
+        s="what color is my dog"
+        linkage=understander.parseString(s, self.debug)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        result=understander.parseInterogative(links, words, combinations, self.current)
+        self.assertEqual(str(result), "yellow")
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

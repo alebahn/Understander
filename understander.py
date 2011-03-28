@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 #from __future__ import print_function
 from linkgrammar import lp, Sentence, Linkage #,clg,ParseOptions,Dictionary
-from understanding import conversation, infinitive, adverb, stripSub, number, detectKind
+from understanding import conversation, infinitive, adverb, stripSub, number, question, detectKind
 import sys
 #import linkgrammar
 #import os
@@ -117,10 +117,13 @@ def generateCombinations(links,words,current):
                 nlink=link[1]
                 noun=combinations[nlink]
                 if all(lName[0]!="M" for lName in words[nlink]):
+                    detrKind=detectKind(detr)
                     if str(detr) in ('a','an','the'):
                         combination=current.new(detr,noun)
-                    elif detectKind(detr)==number:
+                    elif detrKind==number:
                         combination=str(detr)+' '+str(noun)#TODO: actually do something
+                    elif detrKind==question:
+                        combination=current.question(detr,noun)
                     else:
                         combination=current.possession(detr,noun)
                     for key in combinations:
@@ -168,6 +171,10 @@ def generateCombinations(links,words,current):
 
 def clasifySentence(links):
     if 'Q' in links or 'W' in links and any(char in links['W'] for char in "qsj"):
+        if 'W' in links and 'q' in links['W']:
+            if str(links['W']['q'][0][1]) in ["who","what","where","when","why","how"]:
+                return "interrogative"
+            return "declarative"
         return "interrogative"
     elif 'W' in links and 'i' in links['W']:
         return "imperative"
@@ -244,10 +251,16 @@ def parseImperative(links,words,combinations,current):
 def parseDeclarative(links,words,combinations,current):
     if 'S' in links:
         SV=links['S']
+        subject=SV[list(SV.keys())[0]][0][0]
+        verb=SV[list(SV.keys())[0]][0][1]
     elif 'SX' in links:
         SV=links['SX']
-    subject=SV[list(SV.keys())[0]][0][0]
-    verb=SV[list(SV.keys())[0]][0][1]
+        subject=SV[list(SV.keys())[0]][0][0]
+        verb=SV[list(SV.keys())[0]][0][1]
+    elif 'SI' in links: #used for adjective class definitions
+        SV=links['SI']
+        subject=SV[list(SV.keys())[0]][0][1]
+        verb=SV[list(SV.keys())[0]][0][0]
     verbLinks=words[verb]
     subject=combinations[subject]
     verb=combinations[verb]
@@ -272,6 +285,12 @@ def parseDeclarative(links,words,combinations,current):
         objectLinks=[tups for tups in verbLinks if tups[0]=='P']
         directObject=links['P'][objectLinks[0][1]][0][1]
         directObject=combinations[directObject]
+        directObject=current[directObject]
+    elif any(tups[0]=='PF' for tups in verbLinks):  #used for adjective class definition
+        objectLinks=[tups for tups in verbLinks if tups[0]=='PF']
+        directObject=links['PF'][objectLinks[0][1]][0][0]
+        directObject=combinations[directObject]
+        subject,directObject=directObject,subject
         directObject=current[directObject]
     elif any(tups[0]=='I' for tups in verbLinks):
         inf=links['I'][[tups for tups in verbLinks if tups[0]=='I'][0][1]][0][1]
