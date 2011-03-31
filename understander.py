@@ -67,7 +67,7 @@ def generateCombinations(links,words,current):
     combinations=dict((key,key) for key in words)
     #TODO: figure out a way to treat the versions that start with "ID"
     #TODO: remove spacer variable
-    for name in ('AN','G','TM','TW','TY'): #combine some two-word items together
+    for name in ('AN','G','TW'): #combine some two-word items together
         if name in links:
             for group in links[name].values():
                 for link in group:
@@ -98,6 +98,28 @@ def generateCombinations(links,words,current):
                     for key in combinations:
                         if combinations[key]==num1 or combinations[key]==num2:
                             combinations[key]=combination
+    if 'TM' in links:
+        for group in links['TM'].values():
+            for link in group:
+                mkey=link[0]
+                month=combinations[mkey]
+                dkey=link[1]
+                day=combinations[dkey]
+                combination=current.monthDay(month,day)
+                for key in combinations:
+                    if combinations[key]==month or combinations[key]==day:
+                        combinations[key]=combination
+    if 'TY' in links:
+        for group in links['TY'].values():
+            for link in group:
+                dkey=link[0]
+                monthDay=combinations[dkey]
+                ykey=link[1]
+                year=combinations[ykey]
+                combination=current.dateYear(monthDay,year)
+                for key in combinations:
+                    if combinations[key]==monthDay or combinations[key]==year:
+                        combinations[key]=combination
     if 'ND' in links: #combine number-word
         for group in links['ND'].values():
             for link in group:
@@ -116,6 +138,7 @@ def generateCombinations(links,words,current):
                 detr=combinations[dlink]
                 nlink=link[1]
                 noun=combinations[nlink]
+                #if all(lName[0]!="M" or str(links["M"][lName[1]][0][1])!="of" for lName in words[nlink]):
                 if all(lName[0]!="M" for lName in words[nlink]):
                     detrKind=detectKind(detr)
                     if str(detr) in ('a','an','the'):
@@ -140,17 +163,18 @@ def generateCombinations(links,words,current):
                 for key in combinations:
                     if combinations[key]==noun or combinations[key]==detr:
                         combinations[key]=combination
-    if 'J' in links: #combine prepositional phrases
-        for group in links['J'].values():
-            for link in group:
-                pkey=link[0]
-                prep=combinations[pkey]
-                okey=link[1]
-                obj=combinations[okey]
-                combination=current.prepPhrase(prep,obj)
-                for key in combinations:
-                    if combinations[key]==prep or combinations[key]==obj:
-                        combinations[key]=combination
+    for name in ('J','ON'):
+        if name in links: #combine prepositional phrases
+            for group in links[name].values():
+                for link in group:
+                    pkey=link[0]
+                    prep=combinations[pkey]
+                    okey=link[1]
+                    obj=combinations[okey]
+                    combination=current.prepPhrase(prep,obj)
+                    for key in combinations:
+                        if combinations[key]==prep or combinations[key]==obj:
+                            combinations[key]=combination
     if "M" in links:    #apply prep-phrases
         for group in links['M'].values():
             for link in group:
@@ -264,17 +288,17 @@ def parseDeclarative(links,words,combinations,current):
     verbLinks=words[verb]
     subject=combinations[subject]
     verb=combinations[verb]
-    adv=None
+    advs=()
     if any(tups[0]=='N' for tups in verbLinks):
         advLinks=[tups for tups in verbLinks if tups[0]=='N']
         adv=links['N'][advLinks[0][1]][0][1]
         adv=combinations[adv]
-        adv=adverb(stripSub(adv),current)
+        advs+=(adverb(stripSub(adv),current),)
     if any(tups[0]=='EB' for tups in verbLinks):
         advLinks=[tups for tups in verbLinks if tups[0]=='EB']
         adv=links['EB'][advLinks[0][1]][0][1]
         adv=combinations[adv]
-        adv=adverb(stripSub(adv),current)
+        advs+=(adverb(stripSub(adv),current),)
     directObject=None
     if any(tups[0]=='O' for tups in verbLinks):
         objectLinks=[tups for tups in verbLinks if tups[0]=='O']
@@ -302,12 +326,13 @@ def parseDeclarative(links,words,combinations,current):
 ##          directObject=links['B'][[tups for tups in infLinks if tups[0]=='B'][0][1]][0][0]
         directObject=combinations[directObject]
         directObject=infinitive(current,inf,current[directObject])
-    current.verb(subject,verb)(directObject,adv=adv)
+    current.verb(subject,verb)(directObject,advs=advs)
 
 def parseThrough(s,debug,current,file=sys.stdout):
     itter=0
     linkage=parseString(s, debug, file=file)
     while linkage:
+        current.clearTemp()
         links,words=parseLinkage(linkage)
         try:
             if debug:

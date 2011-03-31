@@ -871,7 +871,7 @@ class Test(unittest.TestCase):
         combinations=understander.generateCombinations(links, words,self.current)
         understander.parseDeclarative(links, words, combinations, self.current)
         
-        s="my event is at 5:45"
+        s="my event is at 5"
         linkage=understander.parseString(s, self.debug)
         links,words=understander.parseLinkage(linkage)
         combinations=understander.generateCombinations(links, words,self.current)
@@ -882,27 +882,7 @@ class Test(unittest.TestCase):
         links,words=understander.parseLinkage(linkage)
         combinations=understander.generateCombinations(links, words,self.current)
         result=understander.parseInterogative(links, words, combinations, self.current)
-        self.assertEqual(str(result), "05:45 AM")
-        
-#    def testDate(self):
-#        s="I have an event"
-#        linkage=understander.parseString(s, self.debug)
-#        links,words=understander.parseLinkage(linkage)
-#        combinations=understander.generateCombinations(links, words,self.current)
-#        understander.parseDeclarative(links, words, combinations, self.current)
-#        
-#        s="my event is on July fifth"
-#        linkage=understander.parseString(s, self.debug)
-#        links,words=understander.parseLinkage(linkage)
-#        combinations=understander.generateCombinations(links, words,self.current)
-#        understander.parseDeclarative(links, words, combinations, self.current)
-#        
-#        s="when is my event"
-#        linkage=understander.parseString(s, self.debug)
-#        links,words=understander.parseLinkage(linkage)
-#        combinations=understander.generateCombinations(links, words,self.current)
-#        result=understander.parseInterogative(links, words, combinations, self.current)
-#        self.assertEqual(str(result), "6/5")
+        self.assertEqual(str(result), "05:00 AM")
         
     def testTimeConv(self):
         s="five thirty"
@@ -939,6 +919,128 @@ class Test(unittest.TestCase):
         timeEnt=time(s,self.current)
         self.assertEqual(timeEnt.getTime(), datetime.time(12,32))
         self.assertEqual(str(timeEnt), "12:32 PM")
+        
+    def testDate1(self):
+        s="I have an event"
+        linkage=understander.parseString(s, self.debug)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        understander.parseDeclarative(links, words, combinations, self.current)
+        
+        s="my event is on July fifth"
+        linkage=understander.parseString(s, self.debug)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        understander.parseDeclarative(links, words, combinations, self.current)
+        
+        s="when is my event"
+        linkage=understander.parseString(s, self.debug)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        result=understander.parseInterogative(links, words, combinations, self.current)
+        self.assertEqual(str(result), "July 05")
+    
+    def testDate2(self):
+        s="I have an event"
+        linkage=understander.parseString(s, self.debug)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        understander.parseDeclarative(links, words, combinations, self.current)
+        
+        s="my event is on April 27, 2008"
+        linkage=understander.parseString(s, self.debug)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        understander.parseDeclarative(links, words, combinations, self.current)
+        
+        s="when is my event"
+        linkage=understander.parseString(s, self.debug)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        result=understander.parseInterogative(links, words, combinations, self.current)
+        self.assertEqual(str(result), "April 27, 2008")
+    
+    def testDateTime1(self):
+        s="I have an event"
+        linkage=understander.parseString(s, self.debug)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        understander.parseDeclarative(links, words, combinations, self.current)
+        
+        s="my event is on February 19, 2011"
+        linkage=understander.parseString(s, self.debug)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        understander.parseDeclarative(links, words, combinations, self.current)
+        
+        s="my event is at 9:16 AM"
+        linkage=understander.parseString(s, self.debug)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        understander.parseDeclarative(links, words, combinations, self.current)
+        
+        s="when is my event"
+        linkage=understander.parseString(s, self.debug)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        result=understander.parseInterogative(links, words, combinations, self.current)
+        self.assertEqual(str(result), "09:16 AM, on February 19, 2011")
+    
+    def testDateTime2(self):
+        s="I have an event"
+        linkage=understander.parseString(s, self.debug)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        understander.parseDeclarative(links, words, combinations, self.current)
+        
+        s="my event is at eight"
+        linkage=understander.parseString(s, self.debug)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        understander.parseDeclarative(links, words, combinations, self.current)
+        
+        s="my event is on November 28, 1998"
+        linkage=understander.parseString(s, self.debug)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        understander.parseDeclarative(links, words, combinations, self.current)
+        
+        s="when is my event"
+        linkage=understander.parseString(s, self.debug)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        result=understander.parseInterogative(links, words, combinations, self.current)
+        self.assertEqual(str(result), "08:00 AM, on November 28, 1998")
+    
+    def testDateTime1Line(self):
+        s="I have an appointment on January first at six forty-five PM"
+        linkage=understander.parseString(s, self.debug)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        understander.parseDeclarative(links, words, combinations, self.current)
+        
+        s="when is my appointment"
+        linkage=understander.parseString(s, self.debug)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        result=understander.parseInterogative(links, words, combinations, self.current)
+        self.assertEqual(str(result), "06:45 PM, on January 01, 2012")
+        
+    
+    def testDeleteTemp(self):
+        s="I fall with a dog"
+        linkage=understander.parseString(s, self.debug)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        try:
+            understander.parseDeclarative(links, words, combinations, self.current)
+            self.fail("test invalid; exception not raised")
+        except AttributeError as e:
+            pass    #make execution halt unexpectedly
+        
+        self.current.clearTemp()
+        
+        self.assertEqual(len(self.current._temp), 0)
           
     def testNumber(self):
         self.assertRaises(numberError,number,"five",self.current,(),())
@@ -1008,7 +1110,7 @@ class Test(unittest.TestCase):
         else:
             return number(string,self.current)
     
-    def testPlurals1(self):
+    def testPlural1(self):
         s="I have a cat"
         linkage=understander.parseString(s, self.debug)
         links,words=understander.parseLinkage(linkage)

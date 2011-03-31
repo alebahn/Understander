@@ -64,7 +64,7 @@ def conjugate(verb,subject): #change the name of a verb for it's subject
 
 def detectKind(name):   #if possible, determine the type of an object by it's name
     name=str(name)
-    if all((word in number.number_words) for word in name.replace('-',' ').split(' ')):
+    if all((word in number.number_words) for word in name.replace('-',' ').split(' ')) or name.isdecimal():
         return number
     elif ":" in name:
         return time
@@ -119,33 +119,64 @@ class interjection(object):
 class prepositionalPhrase(object):
     def __init__(self,prep,obj,context):
         self.preposition=prep
-        if(self.preposition=="at"):
+        if self.preposition=="at":
             if obj in context:
                 obj=context[obj]
                 objKind=type(obj)
             else:
                 objKind=detectKind(obj)
             if objKind==number or objKind==time:
-                self.noun=time(obj,context)
+                if objKind==number:
+                    self.noun=time(number(obj, context), context)
+                else:
+                    self.noun=time(obj,context)
                 context.add(self.noun,True,obj)
             else:
                 self.noun=location(str(obj),context)
-        if(self.preposition=="of"):
+        elif self.preposition=="of":
             self.noun=context[obj]
-        self.name=name(str(prep)+' '+str(obj),context,self)
-        self._context=context
-    def modify(self,subj):
-        if(self.preposition=="at"):
-            if isinstance(self.noun,time):
-                subj.possessions.add(self.noun)
-                subj.time=self.noun
+        elif self.preposition=="on":
+            if obj in context:
+                obj=context[obj]
+                objKind=type(obj)
             else:
-                subj.possessions.add(self.noun)
-                subj.location=self.noun
+                objKind=detectKind(obj)
+            if objKind==date:
+                self.noun=date(obj,context)
+                context.add(self.noun,True,obj)
+        self.name=name(str(prep)+' '+str(obj),context,self)
+        self._current=context
+    def modify(self,subj):
         if(self.preposition=="of"):
             subj=stripSub(subj)
             fullName=subj+" "+str(self.name)
-            self._context.add(getattr(self.noun,subj),True,fullName)
+            #self._current.add(getattr(self.noun,subj),True,fullName)
+            return getattr(self.noun,subj)
+        else:
+            if not isinstance(subj,entity):
+                subj=stripSub(subj)
+                subj=self._current[subj]
+            if(self.preposition=="at"):
+                if isinstance(self.noun,time):
+                    if "time" in subj.__dict__ and  isinstance(subj.time,date):
+                        subj.possessions.remove(subj.time)
+                        subj.time=dateTime(subj.time, self.noun,self._current)
+                        subj.possessions.add(self.noun)
+                    else:
+                        subj.possessions.add(self.noun)
+                        subj.time=self.noun
+                else:
+                    subj.possessions.add(self.noun)
+                    subj.location=self.noun
+            elif(self.preposition=="on"):
+                if "time" in subj.__dict__ and  isinstance(subj.time,time):
+                    subj.possessions.remove(subj.time)
+                    subj.time=dateTime(self.noun,subj.time,self._current)
+                    subj.possessions.add(self.noun)
+                else:
+                    subj.possessions.add(self.noun)
+                    subj.time=self.noun
+            return subj
 
 class entity(metaclass=kind):
     def __new__(cls,*args,**kargs):
@@ -170,6 +201,8 @@ class entity(metaclass=kind):
     def __str__(self):
         return str(self.name)
     def __getattr__(self,name):
+        if "possessions" not in self.__dict__:
+            raise AttributeError(name)
         for item in self.possessions:
             if isinstance(item,self._context._kinds[name]):
                 setattr(self,name,getattr(self,type(item).__name__))
@@ -180,8 +213,8 @@ class entity(metaclass=kind):
     @property
     def possessors(self):
         return self.possessor
-    def _have_set(self,DO=None,adv=None):
-        if adv==None:
+    def _have_set(self,DO=None,advs=()):
+        if advs==():
             self.possessions.add(DO)
             setattr(self,type(DO).__name__,DO)
             if DO!=None:
@@ -193,7 +226,7 @@ class entity(metaclass=kind):
 #                    for handle in self._context.names(DO):
 #                        del(self._context[handle])
 #                    DO.name=name(DO.name.partition(' ')[2],self._context,self)
-        elif adv=="not":
+        if "not" in advs:
             if DO.name.partition(' ')[0] in ('a','an'):
                 if any(isinstance(item,type(DO)) for item in self.possessions):
                     for item in [item for item in self.possessions if isinstance(item,type(DO))]:
@@ -220,15 +253,15 @@ class entity(metaclass=kind):
         else:
             return interjection(DO in self.possessions)
     have=verb(_have_set,asker=_have_ask,acter=_have_set)  #should acter be different?
-    def _do_help(self,DO=None,adv=None):
-        return getattr(self,DO.verb)(DO.DO,adv=adv)
+    def _do_help(self,DO=None,advs=()):
+        return getattr(self,DO.verb)(DO.DO,advs=advs)
     def _do_ask(self,DO=None):
         return getattr(self,DO.verb).ask(DO.DO)
     def _do_act(self,DO=None):
         return getattr(self,DO.verb).act(DO.DO)
     do=verb(helper=_do_help,asker=_do_ask,acter=_do_act)
-    def _be_set(self,DO=None,adv=None):
-        if adv==None:
+    def _be_set(self,DO=None,advs=()):
+        if advs==():
             if isinstance(DO,adjective):
                 if type(DO).__name__ in self.__dict__:
                     self.properties.remove(getattr(self, type(DO).__name__))
@@ -267,7 +300,7 @@ class entity(metaclass=kind):
                     setattr(DO.possessor,type(DO).__name__,self)    #do all supertypes
                 #check class compatibility and remove from class instance lists
                 #raise Exception("WTF Batman!")    #TODO: add more redeffinition stuff
-        elif adv=="not":
+        if "not" in advs:
             if isinstance(DO,adjective):
                 if DO in self.properties:
                     self.properties.remove(DO)
@@ -309,14 +342,14 @@ class name(entity):
         return self.string==str(other)
     def partition(self,sep):
         return self.string.partition(sep)
-    def _be_set(self,DO=None,adv=None):
-        if adv==None:
+    def _be_set(self,DO=None,advs=()):
+        if advs==():
             if isinstance(DO,adjective):
                 self.properties.append(DO)
             else:
                 self.string=str(DO.name)
                 self.possessor.be(DO)
-        elif adv=="not":
+        if "not" in advs:
             print("What is it then?",file=self._context.outFile)
     def _be_ask(self,DO=None):
         if isinstance(DO,adjective):
@@ -335,8 +368,8 @@ class adjective(entity):
             return self.name==other
         else:
             return False
-    def _be_set(self,DO,adv=None):
-        if adv==None:
+    def _be_set(self,DO,advs=()):
+        if advs==():
             if not issubclass(type(DO), adjective):
                 type(DO).__bases__=(adjective,)
             self=type(DO)(str(self.name),self._context)
@@ -368,7 +401,7 @@ class location(place):
 
 class number(thing):
     ones_place=dict((value,key) for (key,value) in enumerate(["zero","one","two","three","four","five","six","seven","eight","nine","ten","eleven","twelve","thirteen","fourteen","fifteen","sixteen","seventeen","eighteen","nineteen"]))
-    ones_place["oh"]=0
+    ones_place.update(dict((value,key) for (key,value) in enumerate(["oh","first","second","third","fourth","fifth","sixth","seventh","eighth","ninth","tenth","eleventh","twelfth","thirteenth","fourteenth","fifteenth","sixteenth","seventeenth","eighteenth","nineteenth"])))
     tens_place=dict((value,key*10+20) for (key,value) in enumerate(["twenty","thirty","forty","fifty","sixty","seventy","eighty","ninety"]))
     place_marker={"hundred":2,"thousand":3,"million":6,"billion":9,"trillion":12}
     number_words=list(ones_place.keys())+list(tens_place.keys())+list(place_marker.keys())
@@ -379,7 +412,10 @@ class number(thing):
         if called=="a number":
             thing.__init__(self,called,context)
         else:
-            if str(called).isdecimal():
+            if isinstance(called,number):
+                self.value=called.value
+                self.words=called.words
+            elif str(called).isdecimal():
                 self.value=(int(str(called)),)
                 self.words=self._genWords()
             else:
@@ -495,6 +531,43 @@ class time(thing):
         return self.time
     def _toString(self):
         return self.time.strftime("%I:%M %p")
+
+class date(thing):
+    months=("January","February","March","April","May","June",
+            "July","August","September","October","November","December")
+    def __init__(self,called,context,part1=None,num=None):
+        if called=="a date":
+            thing.__init__(self,called,context)
+        else:
+            if isinstance(called,date):
+                self.date=called.date
+                self.hasYear=called.hasYear
+            elif isinstance(part1,date):
+                self.date=part1.date
+                self.date=self.date.replace(int(num))
+                self.hasYear=True
+            elif part1 in self.months:
+                self.date=datetime.datetime.strptime(part1+' '+str(int(num)),"%B %d")
+                self.hasYear=False
+            else:
+                raise Exception("Invalid Date")
+            thing.__init__(self,self._toString(),context)
+    def _toString(self):
+        if self.hasYear:
+            return self.date.strftime("%B %d, %Y")
+        else:
+            return self.date.strftime("%B %d")
+
+class dateTime(thing):
+    def __init__(self,date,time,context):
+        self.datetime=datetime.datetime.combine(date.date,time.time)
+        self.hasYear=date.hasYear
+        thing.__init__(self,self._toString(),context)
+    def _toString(self):
+        if self.hasYear:
+            return self.datetime.strftime("%I:%M %p, on %B %d, %Y")
+        else:
+            return self.datetime.strftime("%I:%M %p, on %B %d")
 
 class plural(entity):
     def __new__(cls,name,context,entities,kind=thing):
@@ -678,6 +751,11 @@ class conversation:
             del(self._temp[stripSub(index)])
         else:
             raise KeyError(index)
+    def clearTemp(self):
+        keys=set(self._temp.keys())
+        for index in keys:
+            self._names[self._temp[index]].remove(index)
+            del(self._temp[index])
     def __contains__(self,index):
         return index in self._entities.keys() or index in self._kinds.keys() or index in reversePronouns.keys() or index in self._temp.keys()
     def entity(self,name):
@@ -769,28 +847,27 @@ class conversation:
         self.add(quest,True,combination)
         return combination
     def adjective(self,adj,noun):
+        noun=stripSub(noun)
         if "." in str(adj) and str(adj).partition(".")[2]=="a":
             adj=stripSub(adj)
-            noun=stripSub(noun)
             if noun.partition(' ')[0] in ('a','an','the'):
                 name=noun.partition(' ')[0]+' '+adj+' '+noun.partition(' ')[2]
             else:
                 name=adj+' '+noun
             if noun.partition(' ')[0] in ('a','an'):
-                if name not in self._temp:
-                    item=self[noun]
-                    item.be(self[adj+'.a'])
-                    self.add(item,True,name)
+                item=self[noun]
+                item.be(self[adj+'.a'])
+                self.add(item,True,name)
             else:
+                item=self[noun]
                 if name not in self._entities:
-                    item=self[noun]
                     del self[noun]
-                    item.be(self[adj+'.a'])
-                    self.add(item,True,name)
+                item.be(self[adj+'.a'])
+                self.add(item,True,name)
         else:
             pPhrase=self[adj]
-            pPhrase.modify(noun)
             name=stripSub(noun)+" "+adj
+            self.add(pPhrase.modify(noun),True,name)
         return name
     def number(self,num1,num2):
         num1=stripSub(num1)
@@ -805,6 +882,27 @@ class conversation:
         else:
             num2=number(num2,self)
         self.add(number(combination,self,num1,num2),True,combination)
+        return combination
+    def monthDay(self,month,day):
+        month=stripSub(month)
+        day=stripSub(day)
+        combination=month+" "+day
+        if day in self:
+            day=self.entity(day)
+        else:
+            day=number(day,self)
+        self.add(date(combination,self,month,day),True,combination)
+        return combination
+    def dateYear(self,moDy,year):
+        moDy=str(moDy)
+        year=stripSub(year)
+        combination=moDy+", "+year
+        moDy=self.entity(moDy)
+        if year in self:
+            year=self.entity(year)
+        else:
+            year=number(year,self)
+        self.add(date(combination,self,moDy,year),True,combination)
         return combination
     def numDet(self,num,obj):
         obj=stripSub(obj)
