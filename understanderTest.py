@@ -1025,7 +1025,26 @@ class Test(unittest.TestCase):
         combinations=understander.generateCombinations(links, words,self.current)
         result=understander.parseInterogative(links, words, combinations, self.current)
         self.assertEqual(str(result), "06:45 PM, on January 01")
+    
+    def testDateTimeTwoLines(self):
+        s="I have an event"
+        linkage=understander.parseString(s, self.debug)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        understander.parseDeclarative(links, words, combinations, self.current)
         
+        s="my event is at 6 on December first, twenty thirteen"
+        linkage=understander.parseString(s, self.debug)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        understander.parseDeclarative(links, words, combinations, self.current)
+        
+        s="when is my event"
+        linkage=understander.parseString(s, self.debug)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        result=understander.parseInterogative(links, words, combinations, self.current)
+        self.assertEqual(str(result), "06:00 AM, on December 01, 2013")
     
     def testDeleteTemp(self):
         s="I fall with a dog"
@@ -1065,6 +1084,12 @@ class Test(unittest.TestCase):
         self.assertEqual(int(num),1992)
         self.assertEqual(str(num),"one thousand nine hundred ninety two")
         
+        s="twenty fifteen"
+        num=self.compileNumber(s)
+        self.assertEqual(num.getNumTuple(),(20,15))
+        self.assertEqual(int(num),2015)
+        self.assertEqual(str(num),"two thousand fifteen")
+        
         s="six thousand nine hundred seventy two"
         num=self.compileNumber(s)
         self.assertEqual(num.getNumTuple(),(6972,))
@@ -1075,7 +1100,7 @@ class Test(unittest.TestCase):
         num=self.compileNumber(s)
         self.assertEqual(num.getNumTuple(),(200005,))
         self.assertEqual(int(num),200005)
-        self.assertEqual(str(num),"twenty million five")
+        self.assertEqual(str(num),"two hundred thousand five")
         
         s="thirty five hundred"
         num=self.compileNumber(s)

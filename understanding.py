@@ -260,7 +260,9 @@ class entity(metaclass=kind):
         return getattr(self,DO.verb).act(DO.DO)
     do=verb(helper=_do_help,asker=_do_ask,acter=_do_act)
     def _be_set(self,DO=None,advs=()):
-        if advs==():
+        if "not" not in advs:
+            for adv in advs:
+                adv.modify(self)
             if isinstance(DO,adjective):
                 if type(DO).__name__ in self.__dict__:
                     self.properties.remove(getattr(self, type(DO).__name__))
@@ -299,7 +301,7 @@ class entity(metaclass=kind):
                     setattr(DO.possessor,type(DO).__name__,self)    #do all supertypes
                 #check class compatibility and remove from class instance lists
                 #raise Exception("WTF Batman!")    #TODO: add more redeffinition stuff
-        if "not" in advs:
+        else:
             if isinstance(DO,adjective):
                 if DO in self.properties:
                     self.properties.remove(DO)
@@ -435,6 +437,9 @@ class number(thing):
                 elif self.ones_place[num]==0:
                     yield last
                     last=self.ones_place[num]
+                elif self.ones_place[num]>=10 and last%100!=0:
+                    yield last
+                    last=self.ones_place[num]
                 elif last%10!=0 or last==0:
                     yield last
                     last=self.ones_place[num]
@@ -492,7 +497,7 @@ class number(thing):
             if num%10>0:
                 yield self.rev_place[2]
                 yield self.rev_ones[num%10]
-                num//=10
+            num//=10
             place+=3
             if num%1000>0:
                 yield self.rev_place[place]
