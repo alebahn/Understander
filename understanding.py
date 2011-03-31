@@ -153,9 +153,6 @@ class prepositionalPhrase(object):
             #self._current.add(getattr(self.noun,subj),True,fullName)
             return getattr(self.noun,subj)
         else:
-            if not isinstance(subj,entity):
-                subj=stripSub(subj)
-                subj=self._current[subj]
             if(self.preposition=="at"):
                 if isinstance(self.noun,time):
                     if "time" in subj.__dict__ and  isinstance(subj.time,date):
