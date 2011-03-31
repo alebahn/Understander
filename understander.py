@@ -299,6 +299,12 @@ def parseDeclarative(links,words,combinations,current):
         adv=links['EB'][advLinks[0][1]][0][1]
         adv=combinations[adv]
         advs+=(adverb(stripSub(adv),current),)
+    if any(tups[0]=="MV" for tups in verbLinks):
+        advLinks=[tups for tups in verbLinks if tups[0]=='MV']
+        for link in links ['MV'][advLinks[0][1]]:
+            adv=link[1]
+            adv=combinations[adv]
+            advs+=(current[adv],)
     directObject=None
     if any(tups[0]=='O' for tups in verbLinks):
         objectLinks=[tups for tups in verbLinks if tups[0]=='O']

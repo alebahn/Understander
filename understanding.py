@@ -214,7 +214,9 @@ class entity(metaclass=kind):
     def possessors(self):
         return self.possessor
     def _have_set(self,DO=None,advs=()):
-        if advs==():
+        if "not" not in advs:
+            for adv in advs:
+                adv.modify(DO)
             self.possessions.add(DO)
             setattr(self,type(DO).__name__,DO)
             if DO!=None:
@@ -226,7 +228,7 @@ class entity(metaclass=kind):
 #                    for handle in self._context.names(DO):
 #                        del(self._context[handle])
 #                    DO.name=name(DO.name.partition(' ')[2],self._context,self)
-        if "not" in advs:
+        else:
             if DO.name.partition(' ')[0] in ('a','an'):
                 if any(isinstance(item,type(DO)) for item in self.possessions):
                     for item in [item for item in self.possessions if isinstance(item,type(DO))]:

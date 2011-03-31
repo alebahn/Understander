@@ -1024,7 +1024,7 @@ class Test(unittest.TestCase):
         links,words=understander.parseLinkage(linkage)
         combinations=understander.generateCombinations(links, words,self.current)
         result=understander.parseInterogative(links, words, combinations, self.current)
-        self.assertEqual(str(result), "06:45 PM, on January 01, 2012")
+        self.assertEqual(str(result), "06:45 PM, on January 01")
         
     
     def testDeleteTemp(self):
