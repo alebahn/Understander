@@ -598,6 +598,13 @@ class plural(entity):
             ent.declinate(declination)
     def __len__(self):
         return len(self._entities)
+    def filter(self,adjs):
+        temp=self._entities
+        for adj in adjs:
+            for index,item in enumerate(temp):
+                if adj not in item.properties:
+                    del temp[index]
+        return plural(str(self.name), self._context, temp, self.kind)
     @property
     def possessors(self):
         return plural(str(self.name)+"'s possessors",self._context,[ent.possessor for ent in self._entities if ent.possessor],kind=person)
@@ -703,6 +710,13 @@ class question(pronoun):
     def _have_ask(self,DO):         #TODO: implement more accurate answer
         if DO.name.partition(' ')[0] in ('a','an') and not DO.possessor:
             alls=type(DO).all(self._context)
+            if isinstance(alls,plural):
+                alls=alls.filter(DO.properties)
+            elif isinstance(alls,nothing):
+                return alls
+            else:
+                if any(adj not in alls.properties for adj in DO.properties):
+                    return nothing(alls.name, self._context, self.kind)
             result=alls.possessors
             result.declinate(1)
             return result
