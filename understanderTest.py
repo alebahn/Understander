@@ -350,6 +350,20 @@ class Test(unittest.TestCase):
         combinations=understander.generateCombinations(links, words,self.current)
         result=understander.parseInterogative(links, words, combinations, self.current)
         self.assertEqual(str(result), "no")
+        
+#    def testMultiplePossession(self):
+#        s="I have a dog"
+#        linkage=understander.parseString(s, self.debug)
+#        links,words=understander.parseLinkage(linkage)
+#        combinations=understander.generateCombinations(links, words,self.current)
+#        understander.parseDeclarative(links, words, combinations,self.current)
+#        
+#        s="I have a dog"
+#        linkage=understander.parseString(s, self.debug)
+#        links,words=understander.parseLinkage(linkage)
+#        combinations=understander.generateCombinations(links, words,self.current)
+#        understander.parseDeclarative(links, words, combinations,self.current)
+#        self.assertEqual(self.ff.getLast(), "Of course!")
     
     def testBe(self):
         s="a cat is an animal"
@@ -1393,6 +1407,28 @@ class Test(unittest.TestCase):
         combinations=understander.generateCombinations(links, words,self.current)
         result=understander.parseInterogative(links, words, combinations, self.current)
         self.assertEqual(str(result), "yellow")
+    
+    def testEmotion(self):
+        s="happy is an emotion"
+        linkage=understander.parseString(s, self.debug)
+        self.assertIsNotNone(linkage)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        understander.parseDeclarative(links, words, combinations, self.current)
+        
+        s="I am happy"
+        linkage=understander.parseString(s, self.debug)
+        self.assertIsNotNone(linkage)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        understander.parseDeclarative(links, words, combinations, self.current)
+        
+        s="what emotion am I"
+        linkage=understander.parseString(s, self.debug)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        result=understander.parseInterogative(links, words, combinations, self.current)
+        self.assertEqual(str(result), "happy")
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

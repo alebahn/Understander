@@ -234,6 +234,10 @@ def parseInterogative(links,words,combinations,current):
         directObject=links['PF'][[tups for tups in verbLinks if tups[0]=='PF'][0][1]][0][0]
         directObject=combinations[directObject]
         directObject=current[directObject]
+    elif any(tups[0]=='B' for tups in verbLinks):
+        directObject=links['B'][[tups for tups in verbLinks if tups[0]=='B'][0][1]][0][0]
+        directObject=combinations[directObject]
+        directObject=current[directObject]
     elif any(tups[0]=='I' for tups in verbLinks):
         inf=links['I'][[tups for tups in verbLinks if tups[0]=='I'][0][1]][0][1]
         infLinks=words[inf]

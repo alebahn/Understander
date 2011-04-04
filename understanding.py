@@ -330,8 +330,10 @@ class entity(metaclass=kind):
         elif isinstance(DO,question):
             if DO.kind==place:
                 return self.location
-            if DO.kind==time:
+            elif DO.kind==time:
                 return self.time
+            elif issubclass(DO.kind,adjective):
+                return getattr(self, DO.kind.__name__)
         elif DO.name.partition(' ')[0] in ('a','an'):
             return interjection(isinstance(self,type(DO)))
         else:
