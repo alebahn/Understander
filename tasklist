@@ -1,9 +1,8 @@
-numbers of objects
-access one of many (have a dog and a dog, access my dog)
-Plurals
-multiple inheritance (a user could be a musician)
 interrogative pro-adverbs (how, why)
+access one of many (have a dog and a dog, access my dog or my black dog)
+multiple inheritance (a user could be a musician)
 pickling
+more advanced plural declination
 make entire structure editable from sentences
 complex, compound, and compound/complex sentences
 more verbs
@@ -14,19 +13,18 @@ Verb definition?
 Prepositional phrases
 More adverbs
 improve personal pronoun antecedents
-filter sentences-different linkage possibilities
+filter sentences
 Conjunctions
+appositives
 Change object lists with class redefinition
 Indefinite pronouns
 have nothing
 Non-English sentence handlers ("run Firefox" "exit")
 allow no direct object
 make responses grammatically correct
-make possessions accessible as plurals?
 Make male/female an adjective
 Object redefinition
 Object undefinition
-
 
 .deb (x86 and amd64)
 windows (.msi?)

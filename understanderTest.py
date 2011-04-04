@@ -1097,14 +1097,6 @@ class Test(unittest.TestCase):
         self.assertEqual(int(num),425)
         self.assertEqual(str(num),"four hundred twenty five")
         
-        s2="I have four hundred twenty-five cats"
-        linkage=understander.parseString(s2, self.debug)
-        links,words=understander.parseLinkage(linkage)
-        understander.generateCombinations(links, words,self.current)
-        num=self.current[s]
-        self.assertEqual(str(num), "four hundred twenty five")
-        self.assertEqual(int(num),425)
-        
         s="nineteen ninety-two"
         num=self.compileNumber(s)
         self.assertEqual(num.getNumTuple(),(19,92))
@@ -1193,6 +1185,67 @@ class Test(unittest.TestCase):
     def testPlural3(self):
         pl=plural("things",self.current,[entity(str(n),self.current) for n in range(5)])
         self.assertEqual(len(pl), 5)
+        
+    def testMultiples1(self):
+        s="I have five cats"
+        linkage=understander.parseString(s, self.debug)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        understander.parseDeclarative(links, words, combinations, self.current)
+        
+        s="what do I have"
+        linkage=understander.parseString(s, self.debug)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        result=understander.parseInterogative(links, words, combinations, self.current)
+        self.assertEqual(str(result), "five cats")
+        
+    def testMultiples2(self):
+        s="I have one dog"
+        linkage=understander.parseString(s, self.debug)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        understander.parseDeclarative(links, words, combinations, self.current)
+        
+        s="what do I have"
+        linkage=understander.parseString(s, self.debug)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        result=understander.parseInterogative(links, words, combinations, self.current)
+        self.assertEqual(str(result), "one dog")
+    
+    def testMultiples3(self):
+        s="I have five fish"
+        linkage=understander.parseString(s, self.debug)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        understander.parseDeclarative(links, words, combinations, self.current)
+        
+        s="I have a cat"
+        linkage=understander.parseString(s, self.debug)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        understander.parseDeclarative(links, words, combinations, self.current)
+        
+        s="what do I have"
+        linkage=understander.parseString(s, self.debug)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        result=understander.parseInterogative(links, words, combinations, self.current)
+        self.assertIn(str(result), ("five fish and a cat","a cat and five fish"))
+        
+        s="I have zero fish"
+        linkage=understander.parseString(s, self.debug)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        understander.parseDeclarative(links, words, combinations, self.current)
+        
+        s="what do I have"
+        linkage=understander.parseString(s, self.debug)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        result=understander.parseInterogative(links, words, combinations, self.current)
+        self.assertEqual(str(result), "a cat")
     
     def testUser(self):
         s="a friend is a user"

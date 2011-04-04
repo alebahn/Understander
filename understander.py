@@ -144,7 +144,8 @@ def generateCombinations(links,words,current):
                     if str(detr) in ('a','an','the'):
                         combination=current.new(detr,noun)
                     elif detrKind==number:
-                        combination=str(detr)+' '+str(noun)#TODO: actually do something
+                        combination=current.multiple(detr,noun)
+                        #combination=str(detr)+' '+str(noun)#TODO: actually do something
                     elif detrKind==question:
                         combination=current.question(detr,noun)
                     else:

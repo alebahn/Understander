@@ -39,6 +39,8 @@ for pronoun in("anybody", "anyone", "anything", "everybody", "everyone", "no one
 reversePronouns=dict((value,key) for key in pronouns.keys() for value in set(pronouns[key]) if value is not None)
 questionPronouns=("who","what","where","when")
 
+constantPlurals=("aircraft", "deer", "fish", "moose", "offspring", "sheep", "species", "salmon", "trout")
+
 def createPronoun(name,context):
     assert(name in reversePronouns.keys())
     baseName=reversePronouns[name]
@@ -61,9 +63,19 @@ def conjugate(verb,subject): #change the name of a verb for it's subject
         return stripSub(tup[1])
     else:
         return stripSub(tup[2])
+    
+def pluralize(name):
+    if name in constantPlurals:
+        return name
+    return str(name)+"s"
+
+def unpluralize(name):
+    if name in constantPlurals:
+        return name
+    return str(name)[:-1]
 
 def detectKind(name):   #if possible, determine the type of an object by it's name
-    name=str(name)
+    name=stripSub(name)
     if all((word in number.number_words) for word in name.replace('-',' ').split(' ')) or name.isdecimal():
         return number
     elif ":" in name:
@@ -211,7 +223,12 @@ class entity(metaclass=kind):
     def possessors(self):
         return self.possessor
     def _have_set(self,DO=None,advs=()):
-        if "not" not in advs:
+        if isinstance(DO,nothing):
+            for item in list(self.possessions):
+                if isinstance(item,DO.kind) or isinstance(item,plural) and issubclass(item.kind, DO.kind):
+                    item.possessor=nothing("no one",self._context,person)
+                    self.possessions.remove(item)
+        elif "not" not in advs:
             for adv in advs:
                 adv.modify(DO)
             self.possessions.add(DO)
@@ -575,29 +592,48 @@ class dateTime(thing):
 
 class plural(entity):
     def __new__(cls,name,context,entities,kind=thing):
-        if len(entities)==0:
-            return nothing(name,context,kind)
-        elif len(entities)==1:
-            return list(entities)[0]
+        if isinstance(entities,number):
+            if int(entities)==0:
+                return nothing(name,context,kind)
+            elif int(entities)==1:
+                return kind(name,context)
+            else:
+                return entity.__new__(cls,name,context,entities,kind)
         else:
-            return entity.__new__(cls,name,context,entities,kind)
+            if len(entities)==0:
+                return nothing(name,context,kind)
+            elif len(entities)==1:
+                return list(entities)[0]
+            else:
+                return entity.__new__(cls,name,context,entities,kind)
     def __init__(self,name,context,entities,kind=thing):
+        if "kind" in self.__dict__:
+            return  #don't reinitialize initialized plural
         entity.__init__(self,name,context)
-        if any(not isinstance(ent,entity) for ent in entities):
-            raise Exception("not an entity")
-        self._entities=list(entities)
+        if isinstance(entities,number):
+            self.numbered=True
+            self._len=entities
+        else:
+            self.numbered=False
+            if any(not isinstance(ent,entity) for ent in entities):
+                raise Exception("not an entity")
+            self._entities=list(entities)
+            self._len=len(entities)
         self.kind=kind
     def __str__(self):  #TODO: declinate
-        if len(self._entities)==2:
-            return ' and '.join(str(ent) for ent in self._entities)
+        if self.numbered:
+            return str(self._len)+" "+pluralize(self.kind.__name__)
         else:
-            return ', '.join(str(ent) for ent in self._entities[:-1])+", and "+str(self._entities[-1])
+            if len(self._entities)==2:
+                return ' and '.join(str(ent) for ent in self._entities)
+            else:
+                return ', '.join(str(ent) for ent in self._entities[:-1])+", and "+str(self._entities[-1])
     def declinate(self,declination):
         self.decl=declination
         for ent in self._entities:
             ent.declinate(declination)
     def __len__(self):
-        return len(self._entities)
+        return int(self._len)
     def filter(self,adjs):
         temp=self._entities
         for adj in adjs:
@@ -775,7 +811,7 @@ class conversation:
             self._names[self._temp[index]].remove(index)
             del(self._temp[index])
     def __contains__(self,index):
-        return index in self._entities.keys() or index in self._kinds.keys() or index in reversePronouns.keys() or index in self._temp.keys()
+        return index in self._entities.keys() or index in self._kinds.keys() or (index in reversePronouns.keys() and reversePronouns[index] in self._antecedents.keys()) or index in self._temp.keys()
     def entity(self,name):
         name=str(name)
         if name in self._entities:
@@ -901,6 +937,23 @@ class conversation:
             num2=number(num2,self)
         self.add(number(combination,self,num1,num2),True,combination)
         return combination
+    def multiple(self,num,obj):
+        num=stripSub(num)
+        obj=stripSub(obj)
+        combination=num+" "+obj
+        if num in self:
+            num=self.entity(num)
+        else:
+            num=number(num,self)
+        if int(num)!=1:
+            type=unpluralize(obj)
+        else:
+            type=obj
+        if type not in self._kinds:
+            self._kinds[type]=kind(type,(entity,),{})
+        plr=plural(combination, self, num, self._kinds[type])
+        self.add(plr,True,combination)
+        return combination
     def monthDay(self,month,day):
         month=stripSub(month)
         day=stripSub(day)
@@ -928,7 +981,7 @@ class conversation:
         if str(num) in self:
             num=self.entity(num)
         else:
-            if ":" in str(num):
+            if detectKind(num)==time:#":" in str(num):
                 num=time(num,self)
             else:
                 num=number(num,self)
