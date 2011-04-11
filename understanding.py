@@ -47,8 +47,8 @@ def createPronoun(name,context):
     index=pronouns[baseName].index(name)
     if baseName in ("I","you","he","she","it","we","they"):
         return personal(baseName,context,index)
-    elif baseName in ("that","this","those","these"):
-        pass
+#    elif baseName in ("that","this","those","these"):
+#        pass
     elif baseName in questionPronouns:
         return question(baseName,context,index)
 
@@ -90,7 +90,7 @@ class kind(type):   #the type of all entities; keeps track of all of a single ki
         type.__init__(cls,name,bases,dict)
         cls._entities=[]
     def all(self,context):
-        return plural("all "+self.__name__,context,self._entities,kind=self)
+        return plural("all "+self.__name__,context,self._entities,kind=self)    #TODO: match context to entities
 
 class verb(object):
     def __init__(self,setter=None,helper=None,asker=None,acter=None):
@@ -148,11 +148,11 @@ class prepositionalPhrase(object):
         elif self.preposition=="of":
             self.noun=context[obj]
         elif self.preposition=="on":
-            if obj in context:
-                obj=context[obj]
-                objKind=type(obj)
-            else:
-                objKind=detectKind(obj)
+#            if obj in context:
+            obj=context[obj]
+            objKind=type(obj)
+#            else:
+#                objKind=detectKind(obj)
             if objKind==date:
                 self.noun=date(obj,context)
                 context.add(self.noun,True,obj)
@@ -231,13 +231,17 @@ class entity(metaclass=kind):
         elif "not" not in advs:
             for adv in advs:
                 adv.modify(DO)
-            self.possessions.add(DO)
-            setattr(self,type(DO).__name__,DO)
-            if DO!=None:
-                if DO.possessor:
-                    DO.possessor.possessions.remove(DO)
-                    delattr(DO.possessor,type(DO).__name__)
-                DO.possessor=self
+            if type(DO).__name__ in self.__dict__:
+                temp=getattr(self, type(DO).__name__)
+                print("Of course!",file=self._context.outFile)
+            else:
+                self.possessions.add(DO)
+                setattr(self,type(DO).__name__,DO)
+                if DO!=None:
+                    if DO.possessor:
+                        DO.possessor.possessions.remove(DO)
+                        delattr(DO.possessor,type(DO).__name__)
+                    DO.possessor=self
 #                if DO.name.partition(' ')[0] in ('a','an'):
 #                    for handle in self._context.names(DO):
 #                        del(self._context[handle])

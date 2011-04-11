@@ -17,10 +17,14 @@ class fakeFile(object):
         self.test=test
     def write(self,str):
         self.record.append(str)
-    def getLast(self,index=0):
-        if len(self.record)<=index:
+    def getLast(self):
+        if len(self.record)==0:
             self.test.fail("output not written to")
-        return self.record[len(self.record)-index-1]
+        elif self.record[len(self.record)-1]=="\n":
+            return self.record[len(self.record)-2]
+        else:
+            return self.record[len(self.record)-1]
+        #return self.record[len(self.record)-index-1]
 
 class Test(unittest.TestCase):
     parser=lp()
@@ -51,12 +55,12 @@ class Test(unittest.TestCase):
         s="I haeve a cat"
         linkage=understander.parseString(s, self.debug, file=self.ff)
         self.assertIsNotNone(linkage)
-        self.assertEqual(self.ff.getLast(1), "I do not recognize 'haeve'.")
+        self.assertEqual(self.ff.getLast(), "I do not recognize 'haeve'.")
         
         s="I have several caers"
         linkage=understander.parseString(s, self.debug, file=self.ff)
         self.assertIsNotNone(linkage)
-        self.assertEqual(self.ff.getLast(1), "I do not recognize 'caers'.")
+        self.assertEqual(self.ff.getLast(), "I do not recognize 'caers'.")
         
         s="I have cats"
         linkage=understander.parseString(s, self.debug)
@@ -79,7 +83,7 @@ class Test(unittest.TestCase):
         s="what is my decl"
         linkage=understander.parseString(s, self.debug, file=self.ff)
         self.assertIsNotNone(linkage)
-        self.assertEqual(self.ff.getLast(1), "I do not recognize 'decl'.")
+        self.assertEqual(self.ff.getLast(), "I do not recognize 'decl'.")
         links,words=understander.parseLinkage(linkage)
         try:
             understander.generateCombinations(links, words,self.current)
@@ -281,7 +285,7 @@ class Test(unittest.TestCase):
         links,words=understander.parseLinkage(linkage)
         combinations=understander.generateCombinations(links, words,self.current)
         understander.parseDeclarative(links, words, combinations,self.current)
-        self.assertEqual(self.ff.getLast(1), "What is it then?")
+        self.assertEqual(self.ff.getLast(), "What is it then?")
         
     def testPossession1(self):
         s="I do not have a cat"
@@ -351,19 +355,46 @@ class Test(unittest.TestCase):
         result=understander.parseInterogative(links, words, combinations, self.current)
         self.assertEqual(str(result), "no")
         
-#    def testMultiplePossession(self):
+    def testMultiplePossession1(self):
+        s="I have a dog"
+        linkage=understander.parseString(s, self.debug)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        understander.parseDeclarative(links, words, combinations,self.current)
+        
+        s="I have a dog"
+        linkage=understander.parseString(s, self.debug)
+        links,words=understander.parseLinkage(linkage)
+        combinations=understander.generateCombinations(links, words,self.current)
+        understander.parseDeclarative(links, words, combinations,self.current)
+        self.assertEqual(self.ff.getLast(), "Of course!")
+        
+#    def testMultiplePossession2(self):
 #        s="I have a dog"
 #        linkage=understander.parseString(s, self.debug)
 #        links,words=understander.parseLinkage(linkage)
 #        combinations=understander.generateCombinations(links, words,self.current)
 #        understander.parseDeclarative(links, words, combinations,self.current)
 #        
-#        s="I have a dog"
+#        s="I have a yellow dog"
 #        linkage=understander.parseString(s, self.debug)
 #        links,words=understander.parseLinkage(linkage)
 #        combinations=understander.generateCombinations(links, words,self.current)
 #        understander.parseDeclarative(links, words, combinations,self.current)
-#        self.assertEqual(self.ff.getLast(), "Of course!")
+#        
+#        s="what do I have"
+#        linkage=understander.parseString(s, self.debug)
+#        links,words=understander.parseLinkage(linkage)
+#        combinations=understander.generateCombinations(links, words,self.current)
+#        result=understander.parseInterogative(links, words, combinations, self.current)
+#        self.assertEqual(str(result), "a dog")
+#        
+#        s="is my dog yellow"
+#        linkage=understander.parseString(s, self.debug)
+#        links,words=understander.parseLinkage(linkage)
+#        combinations=understander.generateCombinations(links, words,self.current)
+#        result=understander.parseInterogative(links, words, combinations, self.current)
+#        self.assertEqual(str(result), "yes")
     
     def testBe(self):
         s="a cat is an animal"
@@ -377,7 +408,7 @@ class Test(unittest.TestCase):
         links,words=understander.parseLinkage(linkage)
         combinations=understander.generateCombinations(links, words,self.current)
         understander.parseDeclarative(links, words, combinations,self.current)
-        self.assertEqual(self.ff.getLast(1), "Of course it is!")
+        self.assertEqual(self.ff.getLast(), "Of course it is!")
         
         s="a cat is not an animal"
         linkage=understander.parseString(s, self.debug)
@@ -1101,72 +1132,6 @@ class Test(unittest.TestCase):
         self.current.clearTemp()
         
         self.assertEqual(len(self.current._temp), 0)
-          
-    def testNumber(self):
-        self.assertRaises(numberError,number,"five",self.current,(),())
-        
-        s="four hundred twenty-five"
-        num=self.compileNumber(s)
-        self.assertEqual(num.getNumTuple(),(425,))
-        self.assertEqual(int(num),425)
-        self.assertEqual(str(num),"four hundred twenty five")
-        
-        s="nineteen ninety-two"
-        num=self.compileNumber(s)
-        self.assertEqual(num.getNumTuple(),(19,92))
-        self.assertEqual(int(num),1992)
-        self.assertEqual(str(num),"one thousand nine hundred ninety two")
-        
-        s="twenty fifteen"
-        num=self.compileNumber(s)
-        self.assertEqual(num.getNumTuple(),(20,15))
-        self.assertEqual(int(num),2015)
-        self.assertEqual(str(num),"two thousand fifteen")
-        
-        s="six thousand nine hundred seventy two"
-        num=self.compileNumber(s)
-        self.assertEqual(num.getNumTuple(),(6972,))
-        self.assertEqual(int(num),6972)
-        self.assertEqual(str(num),s)
-        
-        s="two hundred thousand five"
-        num=self.compileNumber(s)
-        self.assertEqual(num.getNumTuple(),(200005,))
-        self.assertEqual(int(num),200005)
-        self.assertEqual(str(num),"two hundred thousand five")
-        
-        s="thirty five hundred"
-        num=self.compileNumber(s)
-        self.assertEqual(num.getNumTuple(),(3500,))
-        self.assertEqual(int(num),3500)
-        self.assertEqual(str(num),"three thousand five hundred")
-        
-        s="eight six seven five three oh nine"
-        num=self.compileNumber(s)
-        self.assertEqual(num.getNumTuple(),(8,6,7,5,3,0,9))
-        self.assertEqual(int(num),8675309)
-        self.assertEqual(str(num),"eight million six hundred seventy five thousand three hundred nine")
-        
-        s="hundred"
-        num=self.compileNumber(s)
-        self.assertEqual(num.getNumTuple(),(100,))
-        self.assertEqual(int(num),100)
-        self.assertEqual(str(num),"one hundred")
-        
-        s="nineteen oh one"
-        num=self.compileNumber(s)
-        self.assertEqual(num.getNumTuple(),(19,0,1))
-        self.assertEqual(int(num),1901)
-        self.assertEqual(str(num),"one thousand nine hundred one")
-        
-        s="five million hundred"
-        self.assertRaises(numberError, self.compileNumber, s)
-    
-    def compileNumber(self,string):
-        if ' ' in string:
-            return number(string,self.current,number(string.partition(' ')[0],self.current),self.compileNumber(string.partition(' ')[2]))
-        else:
-            return number(string,self.current)
     
     def testPlural1(self):
         s="I have a cat"
@@ -1351,16 +1316,6 @@ class Test(unittest.TestCase):
         combinations=understander.generateCombinations(links, words,self.current)
         result=understander.parseInterogative(links, words, combinations, self.current)
         self.assertEqual(str(result), "a ski jacket")
-    
-    def testConjuate(self):
-        verb=conjugate("be","I")
-        self.assertEqual(verb, "am")
-        verb=conjugate("be","he")
-        self.assertEqual(verb, "is")
-        verb=conjugate("be","you")
-        self.assertEqual(verb, "are")
-        verb=conjugate("do","he")
-        self.assertEqual(verb, "does")
             
     
     def testColor1(self):
