@@ -956,42 +956,6 @@ class Test(unittest.TestCase):
         result=understander.parseInterogative(links, words, combinations, self.current)
         self.assertEqual(str(result), "05:00 AM")
         
-    def testTimeConv(self):
-        s="five thirty"
-        num=self.compileNumber(s)
-        timeEnt=time(num,self.current)
-        self.assertEqual(timeEnt.getTime(), datetime.time(5,30))
-        self.assertEqual(str(timeEnt), "05:30 AM")
-        
-        s="thirteen hundred"
-        num=self.compileNumber(s)
-        timeEnt=time(num,self.current)
-        self.assertEqual(timeEnt.getTime(), datetime.time(13,0))
-        self.assertEqual(str(timeEnt), "01:00 PM")
-        
-        s="zero hundred"
-        num=self.compileNumber(s)
-        timeEnt=time(num,self.current)
-        self.assertEqual(timeEnt.getTime(), datetime.time(0,0))
-        self.assertEqual(str(timeEnt), "12:00 AM")
-        
-        s="1530"
-        num=self.compileNumber(s)
-        timeEnt=time(num,self.current)
-        self.assertEqual(timeEnt.getTime(), datetime.time(15,30))
-        self.assertEqual(str(timeEnt), "03:30 PM")
-        
-        s="5"
-        num=self.compileNumber(s)
-        timeEnt=time(num,self.current)
-        self.assertEqual(timeEnt.getTime(), datetime.time(5,0))
-        self.assertEqual(str(timeEnt), "05:00 AM")
-        
-        s="12:32"
-        timeEnt=time(s,self.current)
-        self.assertEqual(timeEnt.getTime(), datetime.time(12,32))
-        self.assertEqual(str(timeEnt), "12:32 PM")
-        
     def testDate1(self):
         s="I have an event"
         linkage=understander.parseString(s, self.debug)

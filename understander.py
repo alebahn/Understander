@@ -360,6 +360,8 @@ def parseThrough(s,debug,current,file=sys.stdout):
                 #talker.say(response)
             elif sentenceType=="declarative":
                 parseDeclarative(links, words, combinations,current)
+                print("ok", file=file)
+                #talker.say("ok")
         except KeyError as value:   #conjugate 'be' for argument
             linkage=parseString(s, debug, itter+1, file)
             if not linkage:
@@ -399,7 +401,8 @@ if __name__ == "__main__":
     #talker=festival.open()
     
     while True:
-        s=input(">> ")
+        s=input()
+        print(s,file=sys.stderr)
         words=s.split(' ')
         if not parseThrough(s, debug, current):
             #hereafter are grammatically incorrect commands
@@ -413,4 +416,4 @@ if __name__ == "__main__":
             else:
                 print("My responses are limited. Please use precise English")
     # For now explicitly delete the linkage
-    del linkage
+    #del linkage

@@ -294,7 +294,7 @@ class entity(metaclass=kind):
             elif DO.name.partition(' ')[0] in ('a','an') and not DO.possessor:   #TODO: modify owner's list?
                 if issubclass(type(self),type(DO)):
                     print("Of course it is!",file=self._context.outFile)
-                elif self.name.partition(' ')[0] in ('a','an') and issubclass(type(DO),type(self).__base__):
+                elif self.name.partition(' ')[0] in ('a','an') and not self.possessor and issubclass(type(DO),type(self).__base__):
                     type(self).__bases__=(type(DO),)
                 elif issubclass(type(DO),type(self)):
                     cls=type(DO)
@@ -536,10 +536,10 @@ class numberError(Exception):
 class time(thing):
     time_words={"AM","PM","o'clock"}
     def __init__(self,called,context,sfx=None):
-        if isinstance(called,Word):
-            called=str(called)
         if isinstance(called,number):
             tup=called.getNumTuple()
+            if tup[0]==0:
+                tup=tup[1:]
             if len(tup)>2 and tup[1]==0:
                 tup=tup[:1]+tup[2:]
             if len(tup)==1 and tup[0]>100:
@@ -577,7 +577,7 @@ class date(thing):
                 self.date=datetime.datetime.strptime(part1+' '+str(int(num)),"%B %d")
                 self.hasYear=False
             else:
-                raise Exception("Invalid Date")
+                raise Exception("Invalid date")
             thing.__init__(self,self._toString(),context)
     def _toString(self):
         if self.hasYear:
@@ -636,16 +636,16 @@ class plural(entity):
                 return ', '.join(str(ent) for ent in self._entities[:-1])+", and "+str(self._entities[-1])
     def declinate(self,declination):
         self.decl=declination
-        for ent in self._entities:
-            ent.declinate(declination)
+        if not self.numbered:
+            for ent in self._entities:
+                ent.declinate(declination)
     def __len__(self):
         return int(self._len)
     def filter(self,adjs):
-        temp=self._entities
-        for adj in adjs:
-            for index,item in enumerate(temp):
-                if adj not in item.properties:
-                    del temp[index]
+        temp=[]
+        for item in self._entities:
+            if all(adj in item.properties for adj in adjs):
+                temp.append(item)
         return plural(str(self.name), self._context, temp, self.kind)
     @property
     def possessors(self):
@@ -988,7 +988,7 @@ class conversation:
             num=self.entity(num)
         else:
             if detectKind(num)==time:#":" in str(num):
-                num=time(num,self)
+                num=time(str(num),self)
             else:
                 num=number(num,self)
         if obj in time.time_words:
