@@ -52,10 +52,10 @@ class Test(unittest.TestCase):
         linkage=understander.parseString(s, self.debug)
         self.assertIsNone(linkage)
         
-        s="I haeve a cat"
-        linkage=understander.parseString(s, self.debug, file=self.ff)
-        self.assertIsNotNone(linkage)
-        self.assertEqual(self.ff.getLast(), "I do not recognize 'haeve'.")
+#        s="I haeve a cat"
+#        linkage=understander.parseString(s, self.debug, file=self.ff)
+#        self.assertIsNotNone(linkage)
+#        self.assertEqual(self.ff.getLast(), "I do not recognize 'haeve'.")
         
         s="I have several caers"
         linkage=understander.parseString(s, self.debug, file=self.ff)
@@ -83,13 +83,13 @@ class Test(unittest.TestCase):
         s="what is my decl"
         linkage=understander.parseString(s, self.debug, file=self.ff)
         self.assertIsNotNone(linkage)
-        self.assertEqual(self.ff.getLast(), "I do not recognize 'decl'.")
+        self.assertEqual(self.ff.getLast(), "I am assuming 'decl' should be 'deal.n'.")
         links,words=understander.parseLinkage(linkage)
         try:
             understander.generateCombinations(links, words,self.current)
             self.fail("no exception raised")
         except Exception as e:
-            self.assertEqual(e.args[0], "You made an invalid attempt to access non wrapped object of type int.")
+            self.assertEqual(e.args[0], "You do not have a deal.")
     
     def testClasifySentence(self):
         s="I am happy"
@@ -1241,7 +1241,7 @@ class Test(unittest.TestCase):
         links,words=understander.parseLinkage(linkage)
         combinations=understander.generateCombinations(links, words,self.current)
         result=understander.parseInterogative(links, words, combinations, self.current)
-        self.assertEqual(str(result), "Hactar")
+        self.assertEqual(str(result), "me")
         
     def testHelpingVerb(self):
         s="I do have a cake"

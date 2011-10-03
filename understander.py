@@ -27,7 +27,7 @@ def parseString(s,debug,linkNum=0,file=sys.stdout):
     if num_links>linkNum:
         linkage = Linkage(linkNum,sent)
         if debug:
-            linkage.print_diagram(file)
+            linkage.print_diagram(sys.stderr)
         findProblems(linkage, sent, file)
         return linkage
     else:
@@ -347,7 +347,7 @@ def parseThrough(s,debug,current,file=sys.stdout):
         links,words=parseLinkage(linkage)
         try:
             if debug:
-                printLinks(links,file=file)
+                printLinks(links,file=sys.stderr)
             combinations=generateCombinations(links, words,current)
             sentenceType=clasifySentence(links)
             if sentenceType=="interrogative":
