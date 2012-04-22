@@ -3,14 +3,16 @@ import platform
 import getpass
 import datetime
 import math
+from pickle import Pickler, Unpickler
 #import subprocess
 
 #                          Present                                        Past
 #     Inf.      Inf/Imp.   I          Sing.       Plural     Part.        I             Sing.         Plural        Part.
-conj={"have"  :("have.v"  ,"have.v"  ,"has.v"    ,"have.v"  ,"having.v"  ,"had.v-d"    ,"had.v-d"    ,"had.v-d"    ,"had.v-d"  ),
-      "be"    :("be.v"    ,"am.v"    ,"is.v"     ,"are.v"   ,"being.v"   ,"was.v-d"    ,"was.v-d"    ,"were.v-d"   ,"been.v"   ),
-      "do"    :("do.v"    ,"do.v"    ,"does.v"   ,"do.v"    ,"doing.v"   ,"did.v-d"    ,"did.v-d"    ,"did.v-d"    ,"done.v"   ),
-      "create":("create.v","create.v","creates.v","create.v","creating.v","created.v-d","created.v-d","created.v-d","created.v")}
+conj={"have"  :("have.v"  ,"have.v"  ,"has.v"    ,"have.v"  ,"having.v"  ,"had.v-d"    ,"had.v-d"    ,"had.v-d"    ,"had.v-d"    ),
+      "be"    :("be.v"    ,"am.v"    ,"is.v"     ,"are.v"   ,"being.v"   ,"was.v-d"    ,"was.v-d"    ,"were.v-d"   ,"been.v"     ),
+      "do"    :("do.v"    ,"do.v"    ,"does.v"   ,"do.v"    ,"doing.v"   ,"did.v-d"    ,"did.v-d"    ,"did.v-d"    ,"done.v"     ),
+      "create":("create.v","create.v","creates.v","create.v","creating.v","created.v-d","created.v-d","created.v-d","created.v"  ),
+      "quit"  :("quit.v-d","quit.v-d","quits.v"  ,"quit.v-d","quitting.v","quit.v-d"   ,"quit.v-d"   ,"quit.v-d"   ,"quitted.v-d")}
 reverseConj=dict((value,key) for key in conj.keys() for value in set(conj[key]))
 for contraction in ("'m","'re","'s"):
     reverseConj[contraction]="be"
@@ -202,6 +204,7 @@ class entity(metaclass=kind):
         self.pronoun=None
         self.decl=decl
         self.properties=set()
+        self.isGlobal=(called=="the "+self.__class__.__name__)
     def __setattr__(self,name,value):
         if isinstance(value,pronoun) and  not isinstance(value,question):
             object.__setattr__(self,name,value.antecedent)
@@ -531,7 +534,6 @@ class number(thing):
 
 class numberError(Exception):
     pass
-                
 
 class time(thing):
     time_words={"AM","PM","o'clock"}
@@ -548,16 +550,27 @@ class time(thing):
         elif isinstance(called,time):
             self.time=called.time
         elif isinstance(called,str):
+            if called == "the time":
+                self.time=datetime.datetime.now().time()
+                thing.__init__(self, called, context)
+                return
             self.time=datetime.datetime.strptime(called,"%H:%M").time()
         else:
             raise Exception("Invalid time")
         if sfx=="PM":
             self.time=self.time.replace(self.time.hour+12)
+        self.isGlobal = False
         thing.__init__(self,self._toString(),context)
     def getTime(self):
+        if self.isGlobal:
+            self.time=datetime.datetime.now().time()
         return self.time
     def _toString(self):
+        if self.isGlobal:
+            self.time=datetime.datetime.now().time()
         return self.time.strftime("%I:%M %p")
+    def __str__(self):
+        return self._toString()
 
 class date(thing):
     months=("January","February","March","April","May","June",
@@ -687,6 +700,10 @@ class computer(person):
             return stripSub(pronouns["I"][self.decl])
         else:
             return str(self.name)
+    def _quit_set(self, DO=None, adj=None):
+        self._context.pickle()
+        exit(0)
+    quit=verb(_quit_set,acter=_quit_set)
 
 class user(person):
     def __init__(self,name,context,isYou=False):
@@ -774,24 +791,61 @@ class question(pronoun):
     be=verb(asker=_be_ask)
 
 class conversation:
-    def __init__(self,outFile):
+    def __init__(self, outFile, saveFile):
         computerName=platform.node().capitalize()
         userName=getpass.getuser().capitalize()
         self.outFile=outFile
-        self._kinds={"kind":kind,"entity":entity,"name":name,"thing":thing,"person":person,
+        self.saveFile=saveFile
+        self._kinds={"kind":kind, "adjective":adjective,"entity":entity,"name":name,"thing":thing,"person":person,
                      "computer":computer,"user":user,"infinitive":infinitive,"pronoun":pronoun,
                      "male":male,"female":female,"place":place,"location":location,"number":number,
                      "time":time}
-        self._entities={computerName:computer(computerName,self,True),userName:user(userName,self,True),"Vibranium":thing("Vibranium",self)}
+        try:
+            infile = open(saveFile,'rb')
+            unpickle = Unpickler(infile)
+            kinds=unpickle.load()
+            self._loadKinds(kinds, "entity")
+            self._loadKinds(kinds, "adjective")
+            #globalsBak=globals().copy() #backup globals
+            globals().update(self._kinds)   #inject dynamic classes into globals
+            self._entities,self._antecedents,self._names,self._adjectives=unpickle.load()
+            #globals().clear()   #clear globals
+            #globals().update(globalsBak)    #restore backup
+            infile.close
+        except: # IOError:
+            self._entities={computerName:computer(computerName,self,True),userName:user(userName,self,True),"Vibranium":thing("Vibranium",self)}
+            self._antecedents={"I":self._entities[userName],"you":self._entities[computerName]}
+            self._names={}
+            self._adjectives={}
+            for key,value in self._entities.items():
+                if value in self._names:
+                    self._names[value].add(key)
+                else:
+                    self._names[value]={key}
         self._temp={}   #stores 'a/an' objects, possessives, prepositional phrases, and numbers
-        self._antecedents={"I":self._entities[userName],"you":self._entities[computerName]}
-        self._names={}
-        self._adjectives={}
-        for key,value in self._entities.items():
-            if value in self._names:
-                self._names[value].add(key)
-            else:
-                self._names[value]={key}
+    def pickle(self):
+        outfile=open(self.saveFile,'wb')
+        pickle = Pickler(outfile)
+        kinds={"kind":[], "adjective":[], "entity":[]}
+        for knd in self._kinds:
+            if knd not in kinds:
+                kinds[knd]=[]
+                typ=knd
+                base=self._kinds[typ].__base__.__name__
+                while base not in kinds:
+                    kinds[base]=[typ]
+                    typ=base
+                    base=self._kinds[typ].__base__.__name__
+                kinds[base].append(typ)
+        pickle.dump(kinds)
+        globals().update(self._kinds)
+        pickle.dump((self._entities,self._antecedents,self._names,self._adjectives))
+        outfile.close()
+    def _loadKinds(self,kinds,knd,base=None):
+        if knd not in self._kinds:
+            self._kinds[knd]=kind(knd, (self._kinds[base],), {})
+        for child in kinds[knd]:
+            self._loadKinds(kinds, child, knd)
     def getAntecedent(self,pronoun):
         return self._antecedents[pronoun]
     def __getitem__(self,index):
@@ -870,6 +924,7 @@ class conversation:
             return name
         else:
             self._kinds[type]=kind(type,(entity,),{})
+            #globals()[type]=self._kinds[type]
             self.add(self._kinds[type](name,self,*args,**kargs),str(detr) in ("a","an"),name)
             return name
     def add(self,obj,temp,name):

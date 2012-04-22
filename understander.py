@@ -397,11 +397,11 @@ def parseThrough(s,debug,current,file=sys.stdout):
 if __name__ == "__main__":
     debug=False  #turn on/off debugging output
     parser=lp() #initialize the parser
-    current=conversation(sys.stdout)  #initialize the context
+    current=conversation(sys.stdout,"savefile")  #initialize the context
     #talker=festival.open()
     
     while True:
-        s=input()
+        s=input().lstrip()
         print(s,file=sys.stderr)
         words=s.split(' ')
         if not parseThrough(s, debug, current):
@@ -414,6 +414,6 @@ if __name__ == "__main__":
                 debug=not debug
                 print("debug "+("on" if debug else "off")+".")
             else:
-                print("My responses are limited. Please use precise English")
+                print("Please restate.")
     # For now explicitly delete the linkage
     #del linkage

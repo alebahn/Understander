@@ -32,7 +32,8 @@ class Test(unittest.TestCase):
     def setUp(self):
         self.debug=False #turn off debugging output
         self.ff=fakeFile(self)
-        self.current=conversation(self.ff)  #initialize the context
+        self.sf=fakeFile(self)
+        self.current=conversation(self.ff, "")  #initialize the context
     
     def tearDown(self):
         pass

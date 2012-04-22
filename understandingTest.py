@@ -6,19 +6,27 @@ Created on Apr 4, 2011
 import unittest
 from understanderTest import fakeFile
 from understanding import *
+import os
 
 
 class Test(unittest.TestCase):
+    
+    def setUp(self):
+        unittest.TestCase.setUp(self)
+        self.ff=fakeFile(self)
+        try:
+            os.remove("test")
+        except:
+            pass
+        self.current=conversation(self.ff, "test")  #initialize the context
 
     def testCreatePronoun(self):
-        ff=fakeFile(self)
-        current=conversation(ff)  #initialize the context
-        result=createPronoun("me",current)
+        result=createPronoun("me",self.current)
         self.assertEqual(type(result),personal)
         self.assertEqual(object.__getattribute__(result,"name"), "I")
         self.assertEqual(result.decl, 1)
         
-        result=createPronoun("who",current)
+        result=createPronoun("who",self.current)
         self.assertEqual(type(result),question)
         self.assertEqual(object.__getattribute__(result,"name"), "who")
         self.assertEqual(result.decl, 0)
@@ -60,10 +68,8 @@ class Test(unittest.TestCase):
         self.assertEqual(result,entity)
     
     def testKindAll(self):
-        ff=fakeFile(self)
-        current=conversation(ff)  #initialize the context
-        ents=[male(str(i), current) for i in range(10)]
-        alls=male.all(current)
+        ents=[male(str(i), self.current) for i in range(10)]
+        alls=male.all(self.current)
         self.assertEqual(type(alls), plural)
         self.assertEqual(len(alls),10)
         for i,ent in enumerate(alls._entities):
@@ -78,77 +84,67 @@ class Test(unittest.TestCase):
         self.assertEqual(str(inter),"no")
     
     def testPrepositionalPhraseAt(self):
-        ff=fakeFile(self)
-        current=conversation(ff)  #initialize the context
-        pPhrase=prepositionalPhrase("at", "5:30", current)
-        subj=entity("ent",current)
+        pPhrase=prepositionalPhrase("at", "5:30", self.current)
+        subj=entity("ent",self.current)
         pPhrase.modify(subj)
         self.assertEqual(str(subj.time), "05:30 AM")
         
-        pPhrase=prepositionalPhrase("at", "9", current)
-        subj=entity("ent",current)
+        pPhrase=prepositionalPhrase("at", "9", self.current)
+        subj=entity("ent",self.current)
         pPhrase.modify(subj)
         self.assertEqual(str(subj.time), "09:00 AM")
         
-        tm=current.numDet("7", "PM")
-        pPhrase=prepositionalPhrase("at",tm,current)
-        subj=entity("ent2",current)
+        tm=self.current.numDet("7", "PM")
+        pPhrase=prepositionalPhrase("at",tm,self.current)
+        subj=entity("ent2",self.current)
         pPhrase.modify(subj)
         self.assertEqual(str(subj.time), "07:00 PM")
         
-        pPhrase=prepositionalPhrase("at","mall",current)
-        subj=entity("ent3",current)
+        pPhrase=prepositionalPhrase("at","mall",self.current)
+        subj=entity("ent3",self.current)
         pPhrase.modify(subj)
         self.assertEqual(str(subj.location), "mall")
         
     
     def testPrepositionalPhraseOf(self):
-        ff=fakeFile(self)
-        current=conversation(ff)  #initialize the context
-        current.new("a", "dog")
-        pPhrase=prepositionalPhrase("of", "a dog", current)
-        current.add(pPhrase, True,"of a dog")
-        name=current.adjective("of a dog", "name")
-        self.assertEqual(str(current[name]), "a dog")
+        self.current.new("a", "dog")
+        pPhrase=prepositionalPhrase("of", "a dog", self.current)
+        self.current.add(pPhrase, True,"of a dog")
+        name=self.current.adjective("of a dog", "name")
+        self.assertEqual(str(self.current[name]), "a dog")
     
     def testPrepositionalPhraseOn(self):
-        ff=fakeFile(self)
-        current=conversation(ff)  #initialize the context
-        nd=current.monthDay("December", "first")
-        pPhrase=prepositionalPhrase("on", nd, current)
-        subj=entity("ent1",current)
+        nd=self.current.monthDay("December", "first")
+        pPhrase=prepositionalPhrase("on", nd, self.current)
+        subj=entity("ent1",self.current)
         pPhrase.modify(subj)
         self.assertEqual(str(subj.time), "December 01")
     
     def testPrepositionalPhraseAtOn(self):
-        ff=fakeFile(self)
-        current=conversation(ff)  #initialize the context
-        nd=current.monthDay("October", 21)
-        pPhrase=prepositionalPhrase("on", nd, current)
-        subj=entity("ent1",current)
+        nd=self.current.monthDay("October", 21)
+        pPhrase=prepositionalPhrase("on", nd, self.current)
+        subj=entity("ent1",self.current)
         pPhrase.modify(subj)
-        pPhrase=prepositionalPhrase("at","seven",current)
+        pPhrase=prepositionalPhrase("at","seven",self.current)
         pPhrase.modify(subj)
         self.assertEqual(str(subj.time), "07:00 AM, on October 21")
         
-        pPhrase=prepositionalPhrase("at","10:47",current)
-        subj=entity("ent2",current)
+        pPhrase=prepositionalPhrase("at","10:47",self.current)
+        subj=entity("ent2",self.current)
         pPhrase.modify(subj)
-        nd=current.monthDay("February","nine")
-        pPhrase=prepositionalPhrase("on",nd,current)
+        nd=self.current.monthDay("February","nine")
+        pPhrase=prepositionalPhrase("on",nd,self.current)
         pPhrase.modify(subj)
         self.assertEqual(str(subj.time), "10:47 AM, on February 09")
         
     def testEntityGetAttr(self):
-        ff=fakeFile(self)
-        current=conversation(ff)  #initialize the context
-        animal=current.new("an","animal")
-        animal=current[animal]
-        dog=current.new("a","dog")
-        dog=current[dog]
+        animal=self.current.new("an","animal")
+        animal=self.current[animal]
+        dog=self.current.new("a","dog")
+        dog=self.current[dog]
         dog.be(animal)
         
-        me=current["I.p"]
+        me=self.current["I.p"]
         me.have(dog)
         self.assertEqual(me.animal, me.dog)
         
@@ -158,7 +154,7 @@ class Test(unittest.TestCase):
         except AttributeError as e:
             self.assertEqual(e.args[0], "You do not have a person.")
         
-        ent=entity("ent", current)
+        ent=entity("ent", self.current)
         ent.have(dog)
         del ent.possessions
         try:
@@ -168,199 +164,155 @@ class Test(unittest.TestCase):
             self.assertEqual(e.args[0],"animal")
     
     def testDeclinate(self):
-        ff=fakeFile(self)
-        current=conversation(ff)  #initialize the context
-        ent=entity("ent", current)
+        ent=entity("ent", self.current)
         ent.declinate(2)
         self.assertEqual(ent.decl, 2)
     
     def testPosessors(self):
-        ff=fakeFile(self)
-        current=conversation(ff)  #initialize the context
-        ent1=entity("ent1", current)
-        ent2=entity("ent2", current)
+        ent1=entity("ent1", self.current)
+        ent2=entity("ent2", self.current)
         ent1.have(ent2)
         self.assertEqual(ent2.possessors, ent1)
     
     def testHaveNothing(self):
-        ff=fakeFile(self)
-        current=conversation(ff)  #initialize the context
-        ent=entity("ent", current)
-        wanda=person("Wanda", current)
+        ent=entity("ent", self.current)
+        wanda=person("Wanda", self.current)
         ent.have(wanda)
         self.assertIn(wanda, ent.possessions)
-        ent.have(nothing("no people", current, person))
+        ent.have(nothing("no people", self.current, person))
         self.assertNotIn(wanda, ent.possessions)
     
     def testHavePrepositionModified(self):
-        ff=fakeFile(self)
-        current=conversation(ff)  #initialize the context
-        ent=entity("ent", current)
-        apt=entity("apt", current)
-        pPhrase=prepositionalPhrase("at","5", current)
+        ent=entity("ent", self.current)
+        apt=entity("apt", self.current)
+        pPhrase=prepositionalPhrase("at","5", self.current)
         ent.have(apt,(pPhrase,))
         self.assertEqual(str(ent.entity.time), "05:00 AM")
     
     def testHaveAgain(self):
-        ff=fakeFile(self)
-        current=conversation(ff)  #initialize the context
-        ent1=entity("ent1", current)
-        ent2=entity("ent2", current)
+        ent1=entity("ent1", self.current)
+        ent2=entity("ent2", self.current)
         ent1.have(ent2)
         ent1.have(ent2)
-        self.assertEqual(ff.getLast(), "Of course!")
+        self.assertEqual(self.ff.getLast(), "Of course!")
     
     def testNotHaveGeneric(self):
-        ff=fakeFile(self)
-        current=conversation(ff)  #initialize the context
-        ent=entity("ent", current)
-        wanda=person("Wanda", current)
+        ent=entity("ent", self.current)
+        wanda=person("Wanda", self.current)
         ent.have(wanda)
         self.assertIn(wanda, ent.possessions)
-        ent.have(person("a person", current),(adverb("not",current),))
+        ent.have(person("a person", self.current),(adverb("not",self.current),))
         self.assertNotIn(wanda, ent.possessions)
     
     def testNotHaveGenericRedundant(self):
-        ff=fakeFile(self)
-        current=conversation(ff)  #initialize the context
-        ent=entity("ent", current)
-        ent.have(person("a person", current),(adverb("not",current),))
-        self.assertEqual(ff.getLast(), "Of course!")
+        ent=entity("ent", self.current)
+        ent.have(person("a person", self.current),(adverb("not",self.current),))
+        self.assertEqual(self.ff.getLast(), "Of course!")
     
     def testNotHaveSpecific(self):
-        ff=fakeFile(self)
-        current=conversation(ff)  #initialize the context
-        ent=entity("ent", current)
-        wanda=person("Wanda", current)
+        ent=entity("ent", self.current)
+        wanda=person("Wanda", self.current)
         ent.have(wanda)
-        ent.have(wanda,(adverb("not",current),))
+        ent.have(wanda,(adverb("not",self.current),))
         self.assertNotIn(wanda, ent.possessions)
     
     def testNotHaveSpecificRedundant(self):
-        ff=fakeFile(self)
-        current=conversation(ff)  #initialize the context
-        ent=entity("ent", current)
-        ent.have(person("Wanda", current),(adverb("not",current),))
-        self.assertEqual(ff.getLast(), "Of course!")
+        ent=entity("ent", self.current)
+        ent.have(person("Wanda", self.current),(adverb("not",self.current),))
+        self.assertEqual(self.ff.getLast(), "Of course!")
     
     def testHaveAskGeneric(self):
-        ff=fakeFile(self)
-        current=conversation(ff)  #initialize the context
-        ent=entity("ent", current)
-        bla=thing("bla",current)
+        ent=entity("ent", self.current)
+        bla=thing("bla",self.current)
         ent.have(bla)
-        result=ent.have.ask(thing("a thing",current))
+        result=ent.have.ask(thing("a thing",self.current))
         self.assertEqual(str(result), "yes")
     
     def testHaveAskQuestion(self):
-        ff=fakeFile(self)
-        current=conversation(ff)  #initialize the context
-        ent=entity("ent", current)
-        bla=thing("bla",current)
+        ent=entity("ent", self.current)
+        bla=thing("bla",self.current)
         ent.have(bla)
-        result=ent.have.ask(question("what", current, 0, thing))
+        result=ent.have.ask(question("what", self.current, 0, thing))
         self.assertEqual(result, bla)
     
     def testHaveAskSpecific(self):
-        ff=fakeFile(self)
-        current=conversation(ff)  #initialize the context
-        ent=entity("ent", current)
-        bla=thing("bla",current)
+        ent=entity("ent", self.current)
+        bla=thing("bla",self.current)
         ent.have(bla)
         result=ent.have.ask(bla)
         self.assertEqual(str(result), "yes")
     
     def testDoHelp(self):
-        ff=fakeFile(self)
-        current=conversation(ff)  #initialize the context
-        ent=entity("ent", current)
-        candy=female("Candy",current)
-        inf=infinitive(current, "have", candy)
+        ent=entity("ent", self.current)
+        candy=female("Candy",self.current)
+        inf=infinitive(self.current, "have", candy)
         ent.do(inf)
         self.assertIn(candy, ent.possessions)
     
     def testDoAsk(self):
-        ff=fakeFile(self)
-        current=conversation(ff)  #initialize the context
-        ent=entity("ent", current)
-        candy=female("Candy",current)
+        ent=entity("ent", self.current)
+        candy=female("Candy",self.current)
         ent.have(candy)
-        inf=infinitive(current, "have", candy)
+        inf=infinitive(self.current, "have", candy)
         result=ent.do.ask(inf)
         self.assertEqual(str(result), "yes")
     
     def testDoAct(self):
-        ff=fakeFile(self)
-        current=conversation(ff)  #initialize the context
-        you=current["you"]
-        candy=female("Candy",current)
-        inf=infinitive(current, "have", candy)
+        you=self.current["you"]
+        candy=female("Candy",self.current)
+        inf=infinitive(self.current, "have", candy)
         you.do.act(inf)
         self.assertIn(candy, you.possessions)
     
     def testBePrepPhrases(self):
-        ff=fakeFile(self)
-        current=conversation(ff)  #initialize the context
-        ent=entity("ent", current)
-        tm=prepositionalPhrase("at", "6", current)
-        dt=current.monthDay("December", "first")
-        dt=current.dateYear(dt, "2013")
-        dt=prepositionalPhrase("on", dt,current)
+        ent=entity("ent", self.current)
+        tm=prepositionalPhrase("at", "6", self.current)
+        dt=self.current.monthDay("December", "first")
+        dt=self.current.dateYear(dt, "2013")
+        dt=prepositionalPhrase("on", dt,self.current)
         ent.be(tm,(dt,))
         self.assertEqual(str(ent.time), "06:00 AM, on December 01, 2013")
     
     def testBeAdjective(self):
-        ff=fakeFile(self)
-        current=conversation(ff)  #initialize the context
-        ent=entity("ent", current)
-        happy=adjective("happy", current)
+        ent=entity("ent", self.current)
+        happy=adjective("happy", self.current)
         ent.be(happy)
         self.assertIn(happy, ent.properties)
     
     def testBeOpposite(self):
-        ff=fakeFile(self)
-        current=conversation(ff)  #initialize the context
-        ent=entity("ent", current)
-        happy=adjective("happy", current)
+        ent=entity("ent", self.current)
+        happy=adjective("happy", self.current)
         ent.be(happy)
         self.assertIn(happy, ent.properties)
-        sad=adjective("sad", current)
+        sad=adjective("sad", self.current)
         ent.be(sad)
         self.assertNotIn(happy, ent.properties)
     
     def testBeGenericRedundant(self):
-        ff=fakeFile(self)
-        current=conversation(ff)  #initialize the context
-        genThing=thing("a thing", current)
-        genEnt=entity("an entity", current)
+        genThing=thing("a thing", self.current)
+        genEnt=entity("an entity", self.current)
         genThing.be(genEnt)
-        self.assertEqual(str(ff.getLast()), "Of course it is!")
+        self.assertEqual(str(self.ff.getLast()), "Of course it is!")
     
     def tesGenericBeGeneric(self):
-        ff=fakeFile(self)
-        current=conversation(ff)  #initialize the context
-        animal=current.new("an", "animal")
-        genThing=thing("a thing", current)
-        animal=current[animal]
+        animal=self.current.new("an", "animal")
+        genThing=thing("a thing", self.current)
+        animal=self.current[animal]
         animal.be(genThing)
-        self.assertTrue(isinstance(current["animal"],thing))
+        self.assertTrue(isinstance(self.current["animal"],thing))
     
     def testSpecificBeGeneric(self):
-        ff=fakeFile(self)
-        current=conversation(ff)  #initialize the context
-        genEnt=entity("an entity", current)
-        genThing=thing("a thing", current)
-        me=current["me"]
+        genEnt=entity("an entity", self.current)
+        genThing=thing("a thing", self.current)
+        me=self.current["me"]
         me.have(genEnt)
         me.entity.be(genThing)
         self.assertTrue(isinstance(me.entity,thing))
         me.thing    #assert no error thrown
     
     def testIllogicalRetyping(self):
-        ff=fakeFile(self)
-        current=conversation(ff)  #initialize the context
-        genFem=female("a female", current)
-        genThing=thing("a thing", current)
+        genFem=female("a female", self.current)
+        genThing=thing("a thing", self.current)
         try:
             genFem.be(genThing)
             self.fail("Exception not raised")
@@ -368,244 +320,204 @@ class Test(unittest.TestCase):
             self.assertEqual(e.args[0], "How can a female be a thing?")
     
     def testBe(self):
-        ff=fakeFile(self)
-        current=conversation(ff)  #initialize the context
-        I=current["me"]
-        genFriend=current.new("a","friend")
-        genFriend=current[genFriend]
+        I=self.current["me"]
+        genFriend=self.current.new("a","friend")
+        genFriend=self.current[genFriend]
         I.have(genFriend)
-        genFriend=current._kinds["friend"]("a friend", current)
-        genPerson=person("a person", current)
+        genFriend=self.current._kinds["friend"]("a friend", self.current)
+        genPerson=person("a person", self.current)
         genFriend.be(genPerson)
-        Bob=person("Bob", current)
-        current.add(Bob,False,"Bob")
-        genThing=thing("a thing", current)
+        Bob=person("Bob", self.current)
+        self.current.add(Bob,False,"Bob")
+        genThing=thing("a thing", self.current)
         Bob.have(genThing)
-        happy=adjective("happy", current)
+        happy=adjective("happy", self.current)
         Bob.be(happy)
         I.friend.be(Bob)
         self.assertIn(happy, Bob.properties)
         self.assertIn(genThing, Bob.possessions)
     
     def testNotBeAdj(self):
-        ff=fakeFile(self)
-        current=conversation(ff)  #initialize the context
-        Bob=person("Bob", current)
-        happy=adjective("happy", current)
+        Bob=person("Bob", self.current)
+        happy=adjective("happy", self.current)
         Bob.be(happy)
-        Bob.be(happy,(adverb("not", current),))
+        Bob.be(happy,(adverb("not", self.current),))
     
     def testNotBeEnt(self):
-        ff=fakeFile(self)
-        current=conversation(ff)  #initialize the context
-        genThing=thing("a thing", current)
-        genEnt=entity("an entity", current)
+        genThing=thing("a thing", self.current)
+        genEnt=entity("an entity", self.current)
         try:
-            genThing.be(genEnt,(adverb("not", current),))
+            genThing.be(genEnt,(adverb("not", self.current),))
             self.fail("Exception not raised")
         except Exception as e:
             self.assertEqual(e.args[0],"What is it then?")
     
     def testBeAskAdj(self):
-        ff=fakeFile(self)
-        current=conversation(ff)  #initialize the context
-        Larry=person("Larry", current)
-        happy=adjective("happy", current)
+        Larry=person("Larry", self.current)
+        happy=adjective("happy", self.current)
         Larry.be(happy)
         result=Larry.be.ask(happy)
         self.assertEqual(str(result), "yes")
     
     def testBeAskQuestionPlace(self):
-        ff=fakeFile(self)
-        current=conversation(ff)  #initialize the context
-        daThing=thing("the thing", current)
-        daPlace=place("the mall", current)
+        daThing=thing("the thing", self.current)
+        daPlace=place("the mall", self.current)
         daThing.location=daPlace
-        result=daThing.be.ask(question("what place", current, 0, place))
+        result=daThing.be.ask(question("what place", self.current, 0, place))
         self.assertEqual(result, daPlace)
     
     def testBeAskQuestionTime(self):
-        ff=fakeFile(self)
-        current=conversation(ff)  #initialize the context
-        daThing=thing("the thing", current)
-        daTime=time("5:30", current, "PM")
+        daThing=thing("the thing", self.current)
+        daTime=time("5:30", self.current, "PM")
         daThing.time=daTime
-        result=daThing.be.ask(question("what time", current, 0, time))
+        result=daThing.be.ask(question("what time", self.current, 0, time))
         self.assertEqual(result,daTime)
     
     def testBeAskQuestionAdj(self):
-        ff=fakeFile(self)
-        current=conversation(ff)  #initialize the context
-        daThing=thing("the thing", current)
-        genColor=current.new("a", "color")
-        genColor=current[genColor]
-        yellow=current["yellow.a"]
+        daThing=thing("the thing", self.current)
+        genColor=self.current.new("a", "color")
+        genColor=self.current[genColor]
+        yellow=self.current["yellow.a"]
         yellow.be(genColor)
-        yellow=current["yellow.a"]
+        yellow=self.current["yellow.a"]
         daThing.be(yellow)
         result=daThing.color
         self.assertEqual(result,yellow)
-        result=daThing.be.ask(question("what color",current,0,current._kinds["color"]))
+        result=daThing.be.ask(question("what color",self.current,0,self.current._kinds["color"]))
         self.assertEqual(result,yellow)
     
     def testBeAskGeneric(self):
-        ff=fakeFile(self)
-        current=conversation(ff)  #initialize the context
-        genEnt=entity("an entity", current)
-        genThing=thing("a thing", current)
+        genEnt=entity("an entity", self.current)
+        genThing=thing("a thing", self.current)
         result=genThing.be.ask(genEnt)
         self.assertEqual(str(result), "yes")
         result=genEnt.be.ask(genThing)
         self.assertEqual(str(result), "no")
     
     def testSpecificBeSpecific(self):
-        ff=fakeFile(self)
-        current=conversation(ff)  #initialize the context
-        I=current["me"]
-        you=current["you"]
+        I=self.current["me"]
+        you=self.current["you"]
         result=I.be.ask(you)
         self.assertEqual(str(result), "no")
     
     def testCreateVibranium(self):
-        ff=fakeFile(self)
-        current=conversation(ff)  #initialize the context
-        you=current["you"]
-        result=you.create.act(thing("Vibranium",current))
+        you=self.current["you"]
+        result=you.create.act(thing("Vibranium",self.current))
         self.assertEqual(result, "Congratulations sir, you have created a new element.")
     
     def testNameBe(self):
-        ff=fakeFile(self)
-        current=conversation(ff)  #initialize the context
-        daThing=thing("the thing", current)
-        dave=current["Dave"]
+        daThing=thing("the thing", self.current)
+        dave=self.current["Dave"]
         daThing.name.be(dave)
         self.assertEqual(str(daThing), "Dave")
     
     def testNameBeAdj(self):
-        ff=fakeFile(self)
-        current=conversation(ff)  #initialize the context
-        daThing=thing("the thing", current)
-        beautiful=adjective("beautiful",current)
+        daThing=thing("the thing", self.current)
+        beautiful=adjective("beautiful",self.current)
         daThing.name.be(beautiful)
         self.assertIn(beautiful, daThing.name.properties)
     
     def testNameNotBe(self):
-        ff=fakeFile(self)
-        current=conversation(ff)  #initialize the context
-        daThing=thing("the thing", current)
-        dave=current["Dave"]
-        daThing.name.be(dave,(adverb("not", current),))
-        self.assertEqual(ff.getLast(), "What is it then?")
+        daThing=thing("the thing", self.current)
+        dave=self.current["Dave"]
+        daThing.name.be(dave,(adverb("not", self.current),))
+        self.assertEqual(self.ff.getLast(), "What is it then?")
     
     def testNameBeAsk(self):
-        ff=fakeFile(self)
-        current=conversation(ff)  #initialize the context
-        daThing=thing("the thing", current)
+        daThing=thing("the thing", self.current)
         result=daThing.name.be.ask(daThing)
         self.assertEqual(str(result), "yes")
     
     def testNameBeAskAdj(self):
-        ff=fakeFile(self)
-        current=conversation(ff)  #initialize the context
-        daThing=thing("the thing", current)
-        beautiful=adjective("beautiful",current)
+        daThing=thing("the thing", self.current)
+        beautiful=adjective("beautiful",self.current)
         daThing.name.be(beautiful)
         result=daThing.name.be.ask(beautiful)
         self.assertEqual(str(result), "yes")
     
     def testAdjEquality(self):
-        ff=fakeFile(self)
-        current=conversation(ff)  #initialize the context
-        nice=adjective("nice", current)
-        niceName=entity("nice", current).name
+        nice=adjective("nice", self.current)
+        niceName=entity("nice", self.current).name
         self.assertEqual(nice, niceName)
         self.assertNotEqual(nice,5)
     
     def testAdvEquality(self):
-        ff=fakeFile(self)
-        current=conversation(ff)  #initialize the context
-        fast1=adverb("fast", current)
-        fast2=adverb("fast", current)
+        fast1=adverb("fast", self.current)
+        fast2=adverb("fast", self.current)
         self.assertEqual(fast1, fast2)
         self.assertNotEqual(fast1,5)
     
     def testGenericNumber(self):
-        ff=fakeFile(self)
-        current=conversation(ff)  #initialize the context
-        genNum=number("a number", current)
-        I=current["me"]
+        genNum=number("a number", self.current)
+        I=self.current["me"]
         I.have(genNum)
-        result=I.have.ask(question("what",current,thing))
+        result=I.have.ask(question("what",self.current,thing))
         self.assertEqual(str(result), "a number")
     
     def testNumberFromNumber(self):
-        ff=fakeFile(self)
-        current=conversation(ff)  #initialize the context
-        num1=number("five", current)
-        num2=number(num1, current)
+        num1=number("five", self.current)
+        num2=number(num1, self.current)
         self.assertEqual(str(num2),"five")
         
     def testNumber(self):
-        ff=fakeFile(self)
-        current=conversation(ff)  #initialize the context
-        self.assertRaises(numberError,number,"five",current,(),())
+        self.assertRaises(numberError,number,"five",self.current,(),())
         
         s="four hundred twenty-five"
-        num=self.compileNumber(s,current)
+        num=self.compileNumber(s,self.current)
         self.assertEqual(num.getNumTuple(),(425,))
         self.assertEqual(int(num),425)
         self.assertEqual(str(num),"four hundred twenty five")
         
         s="nineteen ninety-two"
-        num=self.compileNumber(s,current)
+        num=self.compileNumber(s,self.current)
         self.assertEqual(num.getNumTuple(),(19,92))
         self.assertEqual(int(num),1992)
         self.assertEqual(str(num),"one thousand nine hundred ninety two")
         
         s="twenty fifteen"
-        num=self.compileNumber(s,current)
+        num=self.compileNumber(s,self.current)
         self.assertEqual(num.getNumTuple(),(20,15))
         self.assertEqual(int(num),2015)
         self.assertEqual(str(num),"two thousand fifteen")
         
         s="six thousand nine hundred seventy two"
-        num=self.compileNumber(s,current)
+        num=self.compileNumber(s,self.current)
         self.assertEqual(num.getNumTuple(),(6972,))
         self.assertEqual(int(num),6972)
         self.assertEqual(str(num),s)
         
         s="two hundred thousand five"
-        num=self.compileNumber(s,current)
+        num=self.compileNumber(s,self.current)
         self.assertEqual(num.getNumTuple(),(200005,))
         self.assertEqual(int(num),200005)
         self.assertEqual(str(num),"two hundred thousand five")
         
         s="thirty five hundred"
-        num=self.compileNumber(s,current)
+        num=self.compileNumber(s,self.current)
         self.assertEqual(num.getNumTuple(),(3500,))
         self.assertEqual(int(num),3500)
         self.assertEqual(str(num),"three thousand five hundred")
         
         s="eight six seven five three oh nine"
-        num=self.compileNumber(s,current)
+        num=self.compileNumber(s,self.current)
         self.assertEqual(num.getNumTuple(),(8,6,7,5,3,0,9))
         self.assertEqual(int(num),8675309)
         self.assertEqual(str(num),"eight million six hundred seventy five thousand three hundred nine")
         
         s="hundred"
-        num=self.compileNumber(s,current)
+        num=self.compileNumber(s,self.current)
         self.assertEqual(num.getNumTuple(),(100,))
         self.assertEqual(int(num),100)
         self.assertEqual(str(num),"one hundred")
         
         s="nineteen oh one"
-        num=self.compileNumber(s,current)
+        num=self.compileNumber(s,self.current)
         self.assertEqual(num.getNumTuple(),(19,0,1))
         self.assertEqual(int(num),1901)
         self.assertEqual(str(num),"one thousand nine hundred one")
         
         s="five million hundred"
-        self.assertRaises(numberError, self.compileNumber, s, current)
+        self.assertRaises(numberError, self.compileNumber, s, self.current)
     
     def compileNumber(self,string,current):
         if ' ' in string:
@@ -614,155 +526,153 @@ class Test(unittest.TestCase):
             return number(string,current)
         
     def testTimeConv(self):
-        ff=fakeFile(self)
-        current=conversation(ff)  #initialize the context
         
         s="five thirty"
-        num=self.compileNumber(s, current)
-        timeEnt=time(num,current)
+        num=self.compileNumber(s, self.current)
+        timeEnt=time(num,self.current)
         self.assertEqual(timeEnt.getTime(), datetime.time(5,30))
         self.assertEqual(str(timeEnt), "05:30 AM")
         
         s="thirteen hundred"
-        num=self.compileNumber(s, current)
-        timeEnt=time(num,current)
+        num=self.compileNumber(s, self.current)
+        timeEnt=time(num,self.current)
         self.assertEqual(timeEnt.getTime(), datetime.time(13,0))
         self.assertEqual(str(timeEnt), "01:00 PM")
         
         s="zero hundred"
-        num=self.compileNumber(s, current)
-        timeEnt=time(num,current)
+        num=self.compileNumber(s, self.current)
+        timeEnt=time(num,self.current)
         self.assertEqual(timeEnt.getTime(), datetime.time(0,0))
         self.assertEqual(str(timeEnt), "12:00 AM")
         
         s="1530"
-        num=self.compileNumber(s, current)
-        timeEnt=time(num,current)
+        num=self.compileNumber(s, self.current)
+        timeEnt=time(num,self.current)
         self.assertEqual(timeEnt.getTime(), datetime.time(15,30))
         self.assertEqual(str(timeEnt), "03:30 PM")
         
         s="5"
-        num=self.compileNumber(s, current)
-        timeEnt=time(num,current)
+        num=self.compileNumber(s, self.current)
+        timeEnt=time(num,self.current)
         self.assertEqual(timeEnt.getTime(), datetime.time(5,0))
         self.assertEqual(str(timeEnt), "05:00 AM")
         
         s="12:32"
-        timeEnt=time(s,current)
+        timeEnt=time(s,self.current)
         self.assertEqual(timeEnt.getTime(), datetime.time(12,32))
         self.assertEqual(str(timeEnt), "12:32 PM")
         
         s="seven oh nine"
-        num=self.compileNumber(s, current)
-        timeEnt=time(num,current)
+        num=self.compileNumber(s, self.current)
+        timeEnt=time(num,self.current)
         self.assertEqual(timeEnt.getTime(), datetime.time(7,9))
         self.assertEqual(str(timeEnt), "07:09 AM")
         
         s="oh two hundred"
-        num=self.compileNumber(s, current)
-        timeEnt=time(num,current)
+        num=self.compileNumber(s, self.current)
+        timeEnt=time(num,self.current)
         self.assertEqual(timeEnt.getTime(), datetime.time(2,0))
         self.assertEqual(str(timeEnt), "02:00 AM")
     
     def testBadTime(self):
-        ff=fakeFile(self)
-        current=conversation(ff)  #initialize the context
         try:
-            time(object(), current)
+            time(object(), self.current)
             self.fail("Exception not raised")
         except Exception as e:
             self.assertEqual(e.args[0], "Invalid time")
     
     def testGenericDate(self):
-        ff=fakeFile(self)
-        current=conversation(ff)  #initialize the context
-        genDate=date("a date", current)
-        I=current["me"]
+        genDate=date("a date", self.current)
+        I=self.current["me"]
         I.have(genDate)
-        result=I.have.ask(question("what",current,thing))
+        result=I.have.ask(question("what",self.current,thing))
         self.assertEqual(str(result), "a date")
     
     def testBadDate(self):
-        ff=fakeFile(self)
-        current=conversation(ff)  #initialize the context
         try:
-            date(object(), current)
+            date(object(), self.current)
             self.fail("Exception not raised")
         except Exception as e:
             self.assertEqual(e.args[0], "Invalid date")
     
     def testSingularizeNumberedPlural(self):
-        ff=fakeFile(self)
-        current=conversation(ff)  #initialize the context
-        zero=plural("zero things", current, number("zero", current))
+        zero=plural("zero things", self.current, number("zero", self.current))
         self.assertEqual(type(zero), nothing)
         
-        one=plural("one thing", current, number("one", current))
+        one=plural("one thing", self.current, number("one", self.current))
         self.assertEqual(type(one), thing)
         
-        two=plural("two things", current, number("two", current))
+        two=plural("two things", self.current, number("two", self.current))
         self.assertEqual(type(two), plural)
         self.assertEqual(len(two), 2)
     
     def testSingularizePlural(self):
-        ff=fakeFile(self)
-        current=conversation(ff)  #initialize the context
-        zero=plural("nothing", current, ())
+        zero=plural("nothing", self.current, ())
         self.assertEqual(type(zero), nothing)
         
-        genThing=thing("a thing", current)
-        one=plural("a thing", current, (genThing,))
+        genThing=thing("a thing", self.current)
+        one=plural("a thing", self.current, (genThing,))
         self.assertEqual(one, genThing)
     
     def testPluralOfPlural(self):
-        ff=fakeFile(self)
-        current=conversation(ff)  #initialize the context
-        numPl=plural("two things", current, number("two", current))
-        plOfPl=plural("not seen", current, (numPl,))
+        numPl=plural("two things", self.current, number("two", self.current))
+        plOfPl=plural("not seen", self.current, (numPl,))
         self.assertEqual(str(plOfPl), "two things")
     
     def testPluralOfNonentity(self):
-        ff=fakeFile(self)
-        current=conversation(ff)  #initialize the context
         try:
-            plural("bad plural", current, (object(),object()))
+            plural("bad plural", self.current, (object(),object()))
             self.fail("Exception not raised")
         except Exception as e:
             self.assertEqual(e.args[0], "not an entity")
     
     def testPluralToString(self):
-        ff=fakeFile(self)
-        current=conversation(ff)  #initialize the context
-        pl=plural("ignored", current, (person("Bob", current), person("Sue", current)))
+        pl=plural("ignored", self.current, (person("Bob", self.current), person("Sue", self.current)))
         self.assertEqual(str(pl), "Bob and Sue")
         
-        pl=plural("ignored", current, (person("Bob", current), person("Phill", current), person("Andy", current)))
+        pl=plural("ignored", self.current, (person("Bob", self.current), person("Phill", self.current), person("Andy", self.current)))
         self.assertEqual(str(pl), "Bob, Phill, and Andy")
     
     def testPluralDeclinate(self):
-        ff=fakeFile(self)
-        current=conversation(ff)  #initialize the context
-        pl=plural("ignored", current, number("five", current))
+        pl=plural("ignored", self.current, number("five", self.current))
         pl.declinate(2)
         self.assertEqual(pl.decl, 2)
         
-        pl=plural("ignored", current, (current["me"], entity("b", current)))
+        pl=plural("ignored", self.current, (self.current["me"], entity("b", self.current)))
         pl.declinate(2)
         self.assertEqual(str(pl), "your and b")
     
     def testPluralFilter(self):
-        ff=fakeFile(self)
-        current=conversation(ff)  #initialize the context
-        happy=adjective("happy",current)
-        hapTng1=thing("happy thing 1", current)
+        happy=adjective("happy",self.current)
+        hapTng1=thing("happy thing 1", self.current)
         hapTng1.be(happy)
-        hapTng2=thing("happy thing 2", current)
+        hapTng2=thing("happy thing 2", self.current)
         hapTng2.be(happy)
-        sadTng1=thing("sad thing 1", current)
-        sadTng2=thing("sad thing 2", current)
-        pl=plural("ignored",current,(hapTng1,hapTng2,sadTng1,sadTng2))
+        sadTng1=thing("sad thing 1", self.current)
+        sadTng2=thing("sad thing 2", self.current)
+        pl=plural("ignored",self.current,(hapTng1,hapTng2,sadTng1,sadTng2))
         pl=pl.filter((happy,))
         self.assertEqual(len(pl._entities), 2)
+    
+    def testSaveLoad(self):
+        globalsBak=globals().copy()
+        I=self.current["me"]
+        cat=self.current.new("a", "cat")
+        cat=self.current[cat]
+        I.have(cat)
+        kinds=self.current._kinds
+        entities=self.current._entities
+        names=self.current._names
+        adjectives=self.current._adjectives
+        self.current.pickle()
+        globals().clear()
+        globals().update(globalsBak)
+        self.current=conversation(self.ff, "test")
+        self.assertEqual(kinds, self.current._kinds)
+        self.assertEqual(entities.keys(), self.current._entities.keys())
+        self.assertTrue(all(name in names.values() for name in self.current._names.values()))
+        self.assertEqual(adjectives, self.current._adjectives)
+        
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
